@@ -3,346 +3,853 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Integrated Structural Design Suite</title>
-    <!-- Load Tailwind CSS -->
+    <title>Civil Design Suite (Indian Standards)</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Load Chart.js for diagrams -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #171822; /* Darker background */
-            color: #e5e7eb;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            background-color: #f3f4f6; /* Lighter gray background */
         }
-        .container {
+        /* Custom styles for a more polished look */
+        .tab-button.active {
+            background-color: #4f46e5; /* Indigo 600 */
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        .tab-button {
+            transition: all 0.2s ease-in-out;
+        }
+        .form-input {
             width: 100%;
-            max-width: 1024px;
-            padding: 2rem;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
-        .nav-button {
-            transition: all 0.2s;
+        .form-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
         }
-        .nav-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.4);
+        .run-button {
+            background-color: #16a34a; /* Green 600 */
+            color: white;
+            font-weight: 700;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s;
+            width: 100%;
         }
-        .diagram-canvas {
-            background-color: #28293d; /* Diagram background */
+        .run-button:hover {
+            background-color: #15803d; /* Green 700 */
+        }
+        .result-card {
+            background-color: #eef2ff; /* Indigo 50 */
+            padding: 1.5rem;
             border-radius: 0.75rem;
-            padding: 1rem;
-            height: 400px; /* Fixed height for diagram area */
+            border: 1px solid #c7d2fe; /* Indigo 200 */
+        }
+        .quantity-card {
+            background-color: #f0fdf4; /* Green 50 */
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid #bbf7d0; /* Green 200 */
+        }
+        .result-title {
+            color: #312e81; /* Indigo 900 */
+            font-weight: 800;
+        }
+        .quantity-title {
+            color: #14532d; /* Green 900 */
+            font-weight: 800;
+        }
+        .result-value {
+             color: #4338ca; /* Indigo 700 */
+             font-weight: 700;
+        }
+        .quantity-value {
+             color: #166534; /* Green 700 */
+             font-weight: 700;
         }
     </style>
 </head>
-<body onload="initApp()">
+<body class="p-4 sm:p-8">
 
-    <div class="container">
+    <main class="max-w-7xl mx-auto bg-white rounded-2xl shadow-xl p-6 sm:p-10">
         <!-- Header -->
-        <header class="text-center py-6 mb-8 bg-[#28293d] rounded-xl shadow-lg">
-            <h1 class="text-3xl md:text-4xl font-extrabold text-indigo-400">
-                Integrated Structural Design Suite
-            </h1>
-            <p class="text-sm text-gray-400 mt-1">
-                IS 456:2000 Code Checks and Visualization Tools
-            </p>
+        <header class="border-b-2 border-gray-200 pb-4 mb-8">
+            <h1 class="text-4xl font-extrabold text-indigo-700">Civil Engineering Design Suite</h1>
+            <p class="text-md text-gray-500 mt-1">Calculations based on Indian Standard (IS) Codes</p>
         </header>
 
-        <!-- Navigation Tabs -->
-        <nav class="flex justify-center space-x-2 md:space-x-4 mb-8">
-            <button onclick="navigate('MuVuCheck')" class="nav-button bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700">
-                Mᵤ/Vᵤ Check
-            </button>
-            <button onclick="navigate('SFDBMD')" class="nav-button bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-xl">
-                SFD & BMD Diagrams
-            </button>
-            <button onclick="navigate('SlabTool')" class="nav-button bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700">
-                Slab Estimation Tool
-            </button>
-            <button onclick="navigate('CantileverDesign')" class="nav-button bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700">
-                Cantilever Beam Design
-            </button>
-            <button onclick="navigate('DesignHistory')" class="nav-button bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700">
-                Design History
-            </button>
+        <!-- Tab Navigation -->
+        <nav class="flex flex-wrap gap-2 mb-8">
+            <button class="tab-button active flex-1 py-3 px-2 rounded-xl font-semibold text-center" data-tab="beam-analysis">Beam Analysis</button>
+            <button class="tab-button flex-1 py-3 px-2 rounded-xl font-semibold text-center" data-tab="slab-design">Slab Design</button>
+            <button class="tab-button flex-1 py-3 px-2 rounded-xl font-semibold text-center" data-tab="column-design">Column Design</button>
+            <button class="tab-button flex-1 py-3 px-2 rounded-xl font-semibold text-center" data-tab="footing-sizing">Footing Sizing</button>
         </nav>
 
-        <!-- Main Content Area -->
-        <main id="content-area" class="p-6 bg-[#212130] rounded-xl shadow-xl border border-[#3a3b4f]">
-            <!-- SFD & BMD Content (Default View) -->
-            <div id="SFDBMD-view" class="active-view">
-                <h2 class="text-2xl font-bold text-indigo-300 mb-4 text-center">Shear Force and Bending Moment Diagrams (UDL)</h2>
-                
-                <!-- Input Parameters (Simplified for UDL Example) -->
-                <div class="flex flex-col md:flex-row gap-4 mb-6 justify-center">
-                    <div class="flex items-center space-x-2">
-                        <label for="spanLength" class="text-gray-400">Span Length (L, m):</label>
-                        <input type="number" id="spanLength" value="5" min="1" step="0.1"
-                               class="bg-gray-700 text-white p-2 rounded-lg w-20 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <!-- Tab Content -->
+        <div>
+            <!-- BEAM ANALYSIS TAB -->
+            <div id="beam-analysis" class="tab-content space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Inputs -->
+                    <div class="lg:col-span-1 space-y-4 p-5 bg-gray-50 rounded-xl border">
+                        <div id="beam-visual" class="w-full h-24 bg-white rounded-lg border flex items-center justify-center p-2 mb-4"></div>
+                        <h3 class="text-xl font-bold text-gray-800">1. Beam Properties</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="beamWidth" class="block text-sm font-medium text-gray-700">Width (mm)</label>
+                                <input type="number" id="beamWidth" value="230" min="100" class="form-input mt-1">
+                            </div>
+                            <div>
+                                <label for="beamDepth" class="block text-sm font-medium text-gray-700">Depth (mm)</label>
+                                <input type="number" id="beamDepth" value="450" min="100" class="form-input mt-1">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="beamType" class="block text-sm font-medium text-gray-700">Beam Type</label>
+                            <select id="beamType" class="form-input mt-1">
+                                <option value="simply-supported">Simply Supported</option>
+                                <option value="cantilever">Cantilever</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="beamLength" class="block text-sm font-medium text-gray-700">Span (L), meters</label>
+                            <input type="number" id="beamLength" value="6" min="1" class="form-input mt-1">
+                        </div>
+                        
+                        <h3 class="text-xl font-bold text-gray-800 pt-4 border-t">2. Loads</h3>
+                        <div>
+                            <label for="beamUDL" class="block text-sm font-medium text-gray-700">Uniformly Distributed Load (w), kN/m</label>
+                            <input type="number" id="beamUDL" value="15" min="0" class="form-input mt-1">
+                        </div>
+                        <div id="pointLoadsContainer">
+                             <label class="block text-sm font-medium text-gray-700">Point Loads (P)</label>
+                             <div class="point-load-row grid grid-cols-11 gap-2 items-center mt-1">
+                                <input type="number" placeholder="Load (kN)" class="form-input col-span-5 point-load-p" value="20">
+                                <input type="number" placeholder="Dist (m)" class="form-input col-span-5 point-load-x" value="3">
+                                <button class="text-red-500 hover:text-red-700 col-span-1" onclick="removePointLoad(this)">✖</button>
+                             </div>
+                        </div>
+                        <button onclick="addPointLoad()" class="w-full text-sm font-semibold text-indigo-600 hover:text-indigo-800 py-2 rounded-lg border-2 border-dashed border-indigo-300 hover:border-indigo-500 transition">+ Add Point Load</button>
+                        
+                        <div class="pt-4">
+                            <button id="runBeamAnalysis" class="run-button">Run Analysis</button>
+                        </div>
                     </div>
-                    <div class="flex items-center space-x-2">
-                        <label for="udlValue" class="text-gray-400">UDL (w, kN/m):</label>
-                        <input type="number" id="udlValue" value="20" min="0.1" step="0.1"
-                               class="bg-gray-700 text-white p-2 rounded-lg w-20 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+
+                    <!-- Results -->
+                    <div class="lg:col-span-2 space-y-6">
+                         <div class="quantity-card">
+                             <h3 class="quantity-title text-2xl mb-4">Material Quantities</h3>
+                             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                 <div><p class="font-semibold text-gray-600">Concrete:</p><p id="beamConcreteVol" class="quantity-value text-xl">-</p></div>
+                                 <div><p class="font-semibold text-gray-600">Cement:</p><p id="beamCement" class="quantity-value text-xl">-</p></div>
+                                 <div><p class="font-semibold text-gray-600">Sand:</p><p id="beamSand" class="quantity-value text-xl">-</p></div>
+                                 <div><p class="font-semibold text-gray-600">Aggregate:</p><p id="beamAggregate" class="quantity-value text-xl">-</p></div>
+                                 <div class="col-span-2 md:col-span-4"><p class="font-semibold text-gray-600">Steel (Est.):</p><p id="beamSteel" class="quantity-value text-xl">-</p></div>
+                             </div>
+                             <p class="text-sm text-gray-500 mt-4">Note: Assumes M25 concrete & 1.5% steel for estimation.</p>
+                         </div>
+                         <div class="p-4 bg-white rounded-xl border">
+                             <h3 class="text-lg font-semibold text-gray-700 mb-2">Shear Force Diagram (SFD)</h3>
+                             <div id="sfd-visual" class="w-full h-48 bg-gray-50 rounded-md"></div>
+                        </div>
+                         <div class="p-4 bg-white rounded-xl border">
+                             <h3 class="text-lg font-semibold text-gray-700 mb-2">Bending Moment Diagram (BMD)</h3>
+                             <div id="bmd-visual" class="w-full h-48 bg-gray-50 rounded-md"></div>
+                        </div>
                     </div>
-                </div>
-
-                <!-- Diagram Controls -->
-                <div class="flex justify-center space-x-4 mb-8">
-                    <button onclick="drawDiagram('BMD')" id="bmd-button"
-                            class="bg-purple-600 text-white px-6 py-3 rounded-xl font-semibold shadow-md hover:bg-purple-700 transition duration-150">
-                        Show Bending Moment Diagram
-                    </button>
-                    <button onclick="drawDiagram('SFD')" id="sfd-button"
-                            class="bg-indigo-600 text-white px-6 py-3 rounded-xl font-semibold shadow-md hover:bg-indigo-700 transition duration-150">
-                        Show Shear Force Diagram
-                    </button>
-                </div>
-
-                <!-- Result and Canvas -->
-                <div id="diagram-output" class="text-center mb-6 text-xl text-green-400 font-mono">
-                    
-                </div>
-                
-                <div class="diagram-canvas">
-                    <canvas id="diagramCanvas"></canvas>
-                </div>
-
-                <div class="mt-8 p-4 bg-[#3a3b4f] rounded-lg">
-                    <p class="text-sm text-gray-400 italic">
-                        Note: Calculations assume a **Simply Supported Beam with UDL**.
-                        <br>Max Values: $M_{max} = \frac{wL^2}{8}$, $V_{max} = \frac{wL}{2}$.
-                    </p>
                 </div>
             </div>
 
-            <!-- Placeholder for other views -->
-            <div id="MuVuCheck-view" class="hidden text-center text-gray-500">Mᵤ/Vᵤ Check Content</div>
-            <div id="SlabTool-view" class="hidden text-center text-gray-500">Slab Estimation Tool Content</div>
-            <div id="CantileverDesign-view" class="hidden text-center text-gray-500">Cantilever Beam Design Content</div>
-            <div id="DesignHistory-view" class="hidden text-center text-gray-500">Design History Content</div>
+            <!-- SLAB DESIGN TAB -->
+            <div id="slab-design" class="tab-content hidden space-y-6">
+                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                     <div class="lg:col-span-1 space-y-4 p-5 bg-gray-50 rounded-xl border">
+                        <div id="slab-visual" class="w-full h-48 bg-white rounded-lg border flex items-center justify-center p-2 mb-4"></div>
+                         <h3 class="text-xl font-bold text-gray-800">1. Slab Properties</h3>
+                         <div>
+                            <label class="block text-sm font-medium text-gray-700">Shorter Span (Lx), meters</label>
+                            <input type="number" id="slabLx" value="3.5" min="1" class="form-input mt-1">
+                         </div>
+                         <div>
+                            <label class="block text-sm font-medium text-gray-700">Longer Span (Ly), meters</label>
+                            <input type="number" id="slabLy" value="5" min="1" class="form-input mt-1">
+                         </div>
+                         <div>
+                            <label class="block text-sm font-medium text-gray-700">Live Load (LL), kN/m²</label>
+                            <input type="number" id="slabLL" value="3" min="0" class="form-input mt-1">
+                         </div>
+                         <h3 class="text-xl font-bold text-gray-800 pt-4 border-t">2. Material Grades</h3>
+                          <div>
+                            <label class="block text-sm font-medium text-gray-700">Concrete Grade (fck), MPa</label>
+                            <select id="slabFck" class="form-input mt-1"><option value="20">M20</option><option value="25" selected>M25</option><option value="30">M30</option></select>
+                         </div>
+                          <div>
+                            <label class="block text-sm font-medium text-gray-700">Steel Grade (fy), MPa</label>
+                            <select id="slabFy" class="form-input mt-1"><option>415</option><option selected>500</option></select>
+                         </div>
+                          <div class="pt-4">
+                            <button id="runSlabDesign" class="run-button">Run Analysis</button>
+                        </div>
+                     </div>
+                     <div class="lg:col-span-2 space-y-6">
+                        <div class="result-card">
+                             <h3 class="result-title text-2xl mb-4">Slab Design Summary (IS 456:2000)</h3>
+                             <div class="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6">
+                                 <div><p class="font-semibold text-gray-600">Slab Type (Ly/Lx):</p><p id="slabTypeResult" class="result-value text-xl">-</p></div>
+                                 <div><p class="font-semibold text-gray-600">Required Depth (D):</p><p id="slabDepthResult" class="result-value text-xl">0 mm</p></div>
+                                 <div><p class="font-semibold text-gray-600">Main Steel (Ast, short span):</p><p id="slabMainSteelResult" class="result-value text-xl">0 mm²</p></div>
+                                 <div><p class="font-semibold text-gray-600">Distribution Steel (Ast, long span):</p><p id="slabDistSteelResult" class="result-value text-xl">0 mm²</p></div>
+                             </div>
+                         </div>
+                         <div class="quantity-card">
+                             <h3 class="quantity-title text-2xl mb-4">Material Quantities</h3>
+                             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                 <div><p class="font-semibold text-gray-600">Concrete:</p><p id="slabConcreteVol" class="quantity-value text-xl">-</p></div>
+                                 <div><p class="font-semibold text-gray-600">Cement:</p><p id="slabCement" class="quantity-value text-xl">-</p></div>
+                                 <div><p class="font-semibold text-gray-600">Sand:</p><p id="slabSand" class="quantity-value text-xl">-</p></div>
+                                 <div><p class="font-semibold text-gray-600">Aggregate:</p><p id="slabAggregate" class="quantity-value text-xl">-</p></div>
+                                 <div class="col-span-2 md:col-span-4"><p class="font-semibold text-gray-600">Steel:</p><p id="slabSteel" class="quantity-value text-xl">-</p></div>
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+            </div>
 
-        </main>
-        <!-- Footer -->
-        <footer class="mt-10 pt-6 text-center text-gray-500 border-t border-[#3a3b4f] w-full max-w-4xl">
-            <p class="text-sm">Developed by Arif Ahmad, Civil Engineer (2025)</p>
-            <p class="text-xs mt-2">Disclaimer: All calculations are based on assumed values and simplified models for educational and preliminary purposes.</p>
-        </footer>
+            <!-- COLUMN DESIGN TAB -->
+            <div id="column-design" class="tab-content hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                     <div class="lg:col-span-1 space-y-4 p-5 bg-gray-50 rounded-xl border">
+                        <div id="column-visual" class="w-full h-48 bg-white rounded-lg border flex items-center justify-center p-4 mb-4"></div>
+                         <h3 class="text-xl font-bold text-gray-800">1. Column Properties</h3>
+                         <div class="grid grid-cols-2 gap-4">
+                             <div>
+                                <label class="block text-sm font-medium text-gray-700">Width (b), mm</label>
+                                <input type="number" id="colWidth" value="300" min="200" step="25" class="form-input mt-1">
+                             </div>
+                             <div>
+                                <label class="block text-sm font-medium text-gray-700">Depth (D), mm</label>
+                                <input type="number" id="colDepth" value="450" min="200" step="25" class="form-input mt-1">
+                            </div>
+                         </div>
+                         <div>
+                            <label class="block text-sm font-medium text-gray-700">Height (H), meters</label>
+                            <input type="number" id="colHeight" value="3" min="1" step="0.5" class="form-input mt-1">
+                         </div>
+                         <div>
+                            <label class="block text-sm font-medium text-gray-700">Factored Axial Load (Pu), kN</label>
+                            <input type="number" id="colPu" value="1500" min="10" class="form-input mt-1">
+                         </div>
+                         <h3 class="text-xl font-bold text-gray-800 pt-4 border-t">2. Material Grades</h3>
+                         <div>
+                            <label class="block text-sm font-medium text-gray-700">Concrete Grade (fck), MPa</label>
+                            <select id="colFck" class="form-input mt-1"><option value="20">M20</option><option value="25" selected>M25</option><option value="30">M30</option></select>
+                         </div>
+                          <div>
+                            <label class="block text-sm font-medium text-gray-700">Steel Grade (fy), MPa</label>
+                            <select id="colFy" class="form-input mt-1"><option>415</option><option selected>500</option></select>
+                         </div>
+                         <div class="pt-4">
+                            <button id="runColumnDesign" class="run-button">Run Analysis</button>
+                        </div>
+                     </div>
+                     <div class="lg:col-span-2 space-y-6">
+                         <div class="result-card">
+                             <h3 class="result-title text-2xl mb-4">Short Axially Loaded Column Design (IS 456:2000, Cl 39.3)</h3>
+                             <div class="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6">
+                                 <div><p class="font-semibold text-gray-600">Required Steel Area (Asc):</p><p id="colSteelAreaResult" class="result-value text-xl">0 mm²</p></div>
+                                 <div><p class="font-semibold text-gray-600">Steel Percentage (pt):</p><p id="colSteelPercentResult" class="result-value text-xl">0.00 %</p></div>
+                                 <div class="md:col-span-2"><p class="font-semibold text-gray-600">Suggested Reinforcement:</p><p id="colReinforcementResult" class="result-value text-xl">-</p></div>
+                                 <div class="md:col-span-2"><p class="font-semibold text-gray-600">Status:</p><p id="colStatusResult" class="result-value text-2xl font-black">-</p></div>
+                             </div>
+                         </div>
+                         <div class="quantity-card">
+                             <h3 class="quantity-title text-2xl mb-4">Material Quantities</h3>
+                             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                 <div><p class="font-semibold text-gray-600">Concrete:</p><p id="colConcreteVol" class="quantity-value text-xl">-</p></div>
+                                 <div><p class="font-semibold text-gray-600">Cement:</p><p id="colCement" class="quantity-value text-xl">-</p></div>
+                                 <div><p class="font-semibold text-gray-600">Sand:</p><p id="colSand" class="quantity-value text-xl">-</p></div>
+                                 <div><p class="font-semibold text-gray-600">Aggregate:</p><p id="colAggregate" class="quantity-value text-xl">-</p></div>
+                                 <div class="col-span-2 md:col-span-4"><p class="font-semibold text-gray-600">Steel:</p><p id="colSteel" class="quantity-value text-xl">-</p></div>
+                             </div>
+                         </div>
+                     </div>
+                </div>
+            </div>
+
+            <!-- FOOTING SIZING TAB -->
+            <div id="footing-sizing" class="tab-content hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                     <div class="lg:col-span-1 space-y-4 p-5 bg-gray-50 rounded-xl border">
+                        <div id="footing-visual" class="w-full h-48 bg-white rounded-lg border flex items-center justify-center p-4 mb-4"></div>
+                         <h3 class="text-xl font-bold text-gray-800">1. Loads & Soil Properties</h3>
+                         <div>
+                            <label class="block text-sm font-medium text-gray-700">Service Load from Column (P), kN</label>
+                            <input type="number" id="footingLoad" value="1200" min="10" class="form-input mt-1">
+                         </div>
+                          <div>
+                            <label class="block text-sm font-medium text-gray-700">Safe Bearing Capacity (SBC), kN/m²</label>
+                            <input type="number" id="footingSBC" value="200" min="50" class="form-input mt-1">
+                         </div>
+                         <div>
+                            <label class="block text-sm font-medium text-gray-700">Footing Depth (Df), mm</label>
+                            <input type="number" id="footingDepth" value="400" min="150" step="50" class="form-input mt-1">
+                         </div>
+                         <div class="pt-4">
+                            <button id="runFootingSizing" class="run-button">Run Analysis</button>
+                        </div>
+                     </div>
+                     <div class="lg:col-span-2 space-y-6">
+                         <div class="result-card">
+                             <h3 class="result-title text-2xl mb-4">Isolated Footing Sizing</h3>
+                             <div class="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6">
+                                 <div><p class="font-semibold text-gray-600">Total Load (incl. self-weight):</p><p id="footingTotalLoad" class="result-value text-xl">0.00 kN</p></div>
+                                 <div><p class="font-semibold text-gray-600">Required Area:</p><p id="footingArea" class="result-value text-xl">0.00 m²</p></div>
+                                 <div class="md:col-span-2"><p class="font-semibold text-gray-600">Required Square Footing Size:</p><p id="footingSize" class="result-value text-2xl font-black">-</p></div>
+                             </div>
+                         </div>
+                         <div class="quantity-card">
+                             <h3 class="quantity-title text-2xl mb-4">Material Quantities</h3>
+                             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                 <div><p class="font-semibold text-gray-600">Concrete:</p><p id="footingConcreteVol" class="quantity-value text-xl">-</p></div>
+                                 <div><p class="font-semibold text-gray-600">Cement:</p><p id="footingCement" class="quantity-value text-xl">-</p></div>
+                                 <div><p class="font-semibold text-gray-600">Sand:</p><p id="footingSand" class="quantity-value text-xl">-</p></div>
+                                 <div><p class="font-semibold text-gray-600">Aggregate:</p><p id="footingAggregate" class="quantity-value text-xl">-</p></div>
+                                 <div class="col-span-2 md:col-span-4"><p class="font-semibold text-gray-600">Steel (Est.):</p><p id="footingSteel" class="quantity-value text-xl">-</p></div>
+                             </div>
+                             <p class="text-sm text-gray-500 mt-4">Note: Assumes M20 concrete & 0.8% steel for estimation.</p>
+                         </div>
+                     </div>
+                 </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="text-center text-sm text-gray-500 py-8">
+        <p>Developed by Arif Ahmad Civil Engineer | email: <a href="mailto:aarif907@gmail.com" class="text-indigo-600 hover:underline">aarif907@gmail.com</a></p>
+    </footer>
+
+    <!-- Custom Message Box -->
+    <div id="messageBox" class="fixed inset-0 bg-gray-800 bg-opacity-60 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full">
+            <h4 id="messageTitle" class="text-2xl font-bold text-red-600 mb-4">Error</h4>
+            <p id="messageText" class="text-gray-700 mb-6"></p>
+            <button onclick="closeMessage()" class="w-full bg-indigo-600 text-white font-semibold py-2 rounded-lg hover:bg-indigo-700">OK</button>
+        </div>
     </div>
 
+
     <script>
-        // Global variables for Chart.js instance and current view
-        let sfdBmdChart = null;
-        let currentDiagramType = 'BMD'; // Default to Bending Moment Diagram
+        // --- UTILITY FUNCTIONS ---
+        const getVal = (id) => parseFloat(document.getElementById(id).value);
+        const getEl = (id) => document.getElementById(id);
+        const setHTML = (id, text) => getEl(id).innerHTML = text;
 
-        // --- Core Application Logic ---
-        function initApp() {
-            // Ensure Chart.js is ready before drawing
-            setupChart();
-            // Attach event listeners to input fields
-            document.getElementById('spanLength').addEventListener('change', updateDiagram);
-            document.getElementById('udlValue').addEventListener('change', updateDiagram);
-            // Draw initial diagram
-            drawDiagram(currentDiagramType);
+        function showMessage(title, message) {
+            setHTML('messageTitle', title);
+            setHTML('messageText', message);
+            getEl('messageBox').classList.remove('hidden');
+            getEl('messageBox').classList.add('flex');
         }
 
-        function navigate(viewId) {
-            document.querySelectorAll('.active-view').forEach(view => {
-                view.classList.replace('active-view', 'hidden');
+        function closeMessage() {
+            getEl('messageBox').classList.add('hidden');
+            getEl('messageBox').classList.remove('flex');
+        }
+
+        // --- TAB SWITCHING LOGIC ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabs = document.querySelectorAll('.tab-button');
+            const contents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(item => item.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    const target = tab.getAttribute('data-tab');
+                    contents.forEach(content => {
+                        content.classList.add('hidden');
+                        if (content.id === target) {
+                            content.classList.remove('hidden');
+                        }
+                    });
+                     runAllAnalyses();
+                });
             });
-            const targetView = document.getElementById(viewId + '-view');
-            if (targetView) {
-                targetView.classList.replace('hidden', 'active-view');
-            }
-        }
-        
-        // --- Structural Calculation Functions ---
-        function calculateUDLValues(L, w) {
-            // Simply Supported Beam with UDL 'w' over span 'L'
-            const M_max = (w * L * L) / 8; // Bending Moment at center
-            const V_max = (w * L) / 2;     // Shear Force at support
-            
-            return { L, w, M_max: M_max.toFixed(2), V_max: V_max.toFixed(2) };
+            // Initial run on page load
+            runAllAnalyses();
+        });
+
+        // --- MASTER ANALYSIS FUNCTION ---
+        function runAllAnalyses() {
+            runBeamAnalysis();
+            runSlabDesign();
+            runColumnDesign();
+            runFootingSizing();
         }
 
-        // --- Chart/Diagram Logic ---
+        // --- MATERIAL QUANTITY CALCULATION ---
+        function getMaterialQuantities(volume, fck, steelWeight) {
+            if (isNaN(volume) || volume <= 0) return { concrete: '-', cement: '-', sand: '-', aggregate: '-', steel: '-'};
 
-        function setupChart() {
-            const ctx = document.getElementById('diagramCanvas').getContext('2d');
+            const mixRatios = { 20: [1, 1.5, 3], 25: [1, 1, 2], 30: [1, 1, 2] }; // M20, M25, M30
+            const ratio = mixRatios[fck] || mixRatios[25];
+            const sumOfRatio = ratio.reduce((a, b) => a + b, 0);
             
-            // Destroy existing chart instance if it exists
-            if (sfdBmdChart) {
-                sfdBmdChart.destroy();
+            const dryVolume = volume * 1.54;
+            const cementVolume = (dryVolume * ratio[0]) / sumOfRatio;
+            const cementBags = Math.ceil((cementVolume * 1440) / 50); // 1440 kg/m3 density, 50kg/bag
+            const sand = ((dryVolume * ratio[1]) / sumOfRatio).toFixed(2);
+            const aggregate = ((dryVolume * ratio[2]) / sumOfRatio).toFixed(2);
+            
+            return {
+                concrete: `${volume.toFixed(2)} m³`,
+                cement: `${cementBags} bags`,
+                sand: `${sand} m³`,
+                aggregate: `${aggregate} m³`,
+                steel: `${steelWeight.toFixed(2)} kg`
+            };
+        }
+
+        // --- SVG VISUALIZATION ---
+        function drawBeamVisual() {
+            const L = getVal('beamLength');
+            const type = getEl('beamType').value;
+            const w = getVal('beamUDL');
+            const container = getEl('beam-visual');
+            
+            let svg = `<svg viewBox="0 0 300 60" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">`;
+            svg += `<line x1="20" y1="30" x2="280" y2="30" stroke="#374151" stroke-width="2"/>`;
+
+            if (type === 'simply-supported') {
+                svg += `<path d="M 20 30 L 15 40 L 25 40 Z" fill="#4f46e5"/>`;
+                svg += `<path d="M 280 30 L 275 40 L 285 40 Z" fill="#4f46e5"/>`;
+                svg += `<line x1="270" y1="42" x2="290" y2="42" stroke="#4f46e5" stroke-width="1"/>`;
+            } else {
+                svg += `<rect x="10" y="20" width="10" height="20" fill="#4f46e5"/>`;
             }
 
-            sfdBmdChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: [0, 1, 2, 3, 4, 5], // Example labels, will be overwritten
-                    datasets: []
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: {
-                        duration: 500
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                title: (items) => `Position: ${items[0].label} m`,
-                                label: (item) => `${item.dataset.label}: ${item.formattedValue} kN${currentDiagramType === 'BMD' ? '.m' : ''}`
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            type: 'linear',
-                            title: {
-                                display: true,
-                                text: 'Distance (m)',
-                                color: '#9ca3af'
-                            },
-                            grid: {
-                                color: '#4b5563'
-                            },
-                            ticks: {
-                                color: '#e5e7eb'
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: currentDiagramType === 'BMD' ? 'Bending Moment (kN.m)' : 'Shear Force (kN)',
-                                color: '#9ca3af'
-                            },
-                            grid: {
-                                color: '#4b5563'
-                            },
-                            ticks: {
-                                color: '#e5e7eb'
-                            }
-                        }
-                    }
+            if (w > 0) {
+                 for(let i = 0; i < 10; i++) {
+                     svg += `<line x1="${20 + i*26}" y1="20" x2="${20 + i*26}" y2="30" stroke="#16a34a" stroke-width="1"/>`;
+                 }
+                 svg += `<line x1="20" y1="20" x2="280" y2="20" stroke="#16a34a" stroke-width="1.5"/>`;
+            }
+
+            document.querySelectorAll('.point-load-row').forEach(row => {
+                const P = parseFloat(row.querySelector('.point-load-p').value);
+                const x = parseFloat(row.querySelector('.point-load-x').value);
+                if (!isNaN(P) && !isNaN(x) && x >= 0 && x <= L) {
+                    const pos = 20 + (x/L) * 260;
+                    svg += `<path d="M ${pos} 10 L ${pos-4} 20 L ${pos+4} 20 Z" fill="#ef4444"/>`;
+                    svg += `<line x1="${pos}" y1="20" x2="${pos}" y2="30" stroke="#ef4444" stroke-width="1.5"/>`;
                 }
             });
+
+            svg += `</svg>`;
+            container.innerHTML = svg;
         }
 
-        function generateSFDData(L, w) {
-            const numPoints = 51; // Number of points for smooth curve
-            const labels = [];
-            const data = [];
+        function drawSlabVisual() {
+            const Lx = getVal('slabLx');
+            const Ly = getVal('slabLy');
+            const container = getEl('slab-visual');
+            const ratio = Ly/Lx;
+            const isTwoWay = ratio <= 2;
+            const w = 200, h = 200 * (Ly/Lx);
+            const viewBoxH = Math.max(220, h+20);
 
-            // SF(x) = wL/2 - w*x 
-            for (let i = 0; i < numPoints; i++) {
-                const x = (i / (numPoints - 1)) * L;
-                const V_x = (w * L / 2) - (w * x);
-
-                labels.push(x.toFixed(2));
-                data.push(V_x.toFixed(2));
-            }
-
-            return { labels, data };
-        }
-
-        function generateBMDData(L, w) {
-            const numPoints = 51; // Number of points for smooth curve
-            const labels = [];
-            const data = [];
-
-            // BM(x) = (wL/2)*x - (w*x^2)/2
-            for (let i = 0; i < numPoints; i++) {
-                const x = (i / (numPoints - 1)) * L;
-                const M_x = (w * L * x / 2) - (w * x * x / 2);
-                
-                labels.push(x.toFixed(2));
-                data.push(M_x.toFixed(2));
-            }
-
-            return { labels, data };
-        }
-
-        function updateDiagram() {
-            // Trigger drawing based on the currently selected diagram type
-            drawDiagram(currentDiagramType);
-        }
-
-        function drawDiagram(type) {
-            currentDiagramType = type;
-            const L = parseFloat(document.getElementById('spanLength').value) || 1;
-            const w = parseFloat(document.getElementById('udlValue').value) || 0.1;
+            let svg = `<svg viewBox="0 -10 220 ${viewBoxH}" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">`;
+            svg += `<rect x="10" y="0" width="${w}" height="${h}" fill="#eef2ff" stroke="#4f46e5" stroke-width="1"/>`;
+            svg += `<text x="${10+w/2}" y="-2" font-size="8" text-anchor="middle">Ly = ${Ly}m</text>`;
+            svg += `<text x="5" y="${h/2}" font-size="8" dominant-baseline="middle" text-anchor="end" transform="rotate(-90 5,${h/2})">Lx = ${Lx}m</text>`;
             
-            if (L <= 0 || w <= 0) {
-                document.getElementById('diagram-output').innerHTML = '<span class="text-red-500">Please enter positive values for L and w.</span>';
-                if(sfdBmdChart) sfdBmdChart.data.datasets = [];
-                sfdBmdChart.update();
+            const spacing = 15;
+            for(let i = spacing; i < w; i+=spacing) {
+                svg += `<line x1="${10+i}" y1="0" x2="${10+i}" y2="${h}" stroke="#3b82f6" stroke-width="0.75"/>`;
+            }
+            for(let i = spacing; i < h; i+=spacing) {
+                svg += `<line x1="10" y1="${i}" x2="${10+w}" y2="${i}" stroke="${isTwoWay ? '#3b82f6' : '#ef4444'}" stroke-width="${isTwoWay ? '0.75' : '0.5'}" ${isTwoWay ? '' : 'stroke-dasharray="2,2"'} />`;
+            }
+            svg += '</svg>';
+            container.innerHTML = svg;
+        }
+
+        function drawColumnVisual() {
+            const b = getVal('colWidth');
+            const D = getVal('colDepth');
+            const h_m = getVal('colHeight');
+            const asc = parseFloat(getEl('colSteelAreaResult').textContent) || 0;
+            const container = getEl('column-visual');
+
+            const scale = 200 / Math.max(b, D);
+            const w = b * scale, h = D * scale;
+            
+            let svg = `<svg viewBox="-20 -20 240 ${h+40}" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">`;
+            svg += `<rect x="0" y="0" width="${w}" height="${h}" fill="#e5e7eb" stroke="#4b5563" stroke-width="1"/>`;
+            svg += `<rect x="5" y="5" width="${w-10}" height="${h-10}" fill="none" stroke="#6b7280" stroke-width="0.75"/>`;
+            svg += `<text x="${w/2}" y="-5" font-size="8" text-anchor="middle">b = ${b}mm</text>`;
+            svg += `<text x="-5" y="${h/2}" font-size="8" dominant-baseline="middle" text-anchor="end" transform="rotate(-90 -5,${h/2})">D = ${D}mm</text>`;
+            
+            if(asc > 0) {
+                 const numBarsText = getEl('colReinforcementResult').textContent;
+                 const numBars = parseFloat(numBarsText.split(' ')[0]) || 4;
+                 const dia = parseFloat(numBarsText.split('T')[1]) || 12;
+                 const barR = dia * scale / 2;
+
+                 if (numBars === 4) {
+                    svg += `<circle cx="10" cy="10" r="${barR}" fill="#4338ca"/>`;
+                    svg += `<circle cx="${w-10}" cy="10" r="${barR}" fill="#4338ca"/>`;
+                    svg += `<circle cx="10" cy="${h-10}" r="${barR}" fill="#4338ca"/>`;
+                    svg += `<circle cx="${w-10}" cy="${h-10}" r="${barR}" fill="#4338ca"/>`;
+                 } else if (numBars === 6) {
+                    svg += `<circle cx="10" cy="10" r="${barR}" fill="#4338ca"/>`;
+                    svg += `<circle cx="${w-10}" cy="10" r="${barR}" fill="#4338ca"/>`;
+                    svg += `<circle cx="10" cy="${h/2}" r="${barR}" fill="#4338ca"/>`;
+                    svg += `<circle cx="${w-10}" cy="${h/2}" r="${barR}" fill="#4338ca"/>`;
+                    svg += `<circle cx="10" cy="${h-10}" r="${barR}" fill="#4338ca"/>`;
+                    svg += `<circle cx="${w-10}" cy="${h-10}" r="${barR}" fill="#4338ca"/>`;
+                 } else if (numBars >= 8) {
+                    svg += `<circle cx="10" cy="10" r="${barR}" fill="#4338ca"/>`;
+                    svg += `<circle cx="${w-10}" cy="10" r="${barR}" fill="#4338ca"/>`;
+                    svg += `<circle cx="10" cy="${h-10}" r="${barR}" fill="#4338ca"/>`;
+                    svg += `<circle cx="${w-10}" cy="${h-10}" r="${barR}" fill="#4338ca"/>`;
+                    svg += `<circle cx="${w/2}" cy="10" r="${barR}" fill="#4338ca"/>`;
+                    svg += `<circle cx="${w/2}" cy="${h-10}" r="${barR}" fill="#4338ca"/>`;
+                    svg += `<circle cx="10" cy="${h/2}" r="${barR}" fill="#4338ca"/>`;
+                    svg += `<circle cx="${w-10}" cy="${h/2}" r="${barR}" fill="#4338ca"/>`;
+                 }
+            }
+
+            svg += '</svg>';
+            container.innerHTML = svg;
+        }
+
+        function drawFootingVisual() {
+            const sizeText = getEl('footingSize').textContent;
+            const Df = getVal('footingDepth');
+            const container = getEl('footing-visual');
+            const side = parseFloat(sizeText.split('m')[0]) || 0;
+            
+            let svg = `<svg viewBox="-20 -20 240 240" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">`;
+            svg += `<rect x="0" y="0" width="200" height="200" fill="#e5e7eb" stroke="#4b5563" stroke-width="1"/>`;
+            svg += `<rect x="75" y="75" width="50" height="50" fill="#d1d5db" stroke="#6b7280" stroke-width="0.5"/>`;
+
+            if(side > 0) {
+                 svg += `<text x="100" y="-5" font-size="10" text-anchor="middle">${side.toFixed(1)} m</text>`;
+                 svg += `<text x="-5" y="100" font-size="10" dominant-baseline="middle" text-anchor="end" transform="rotate(-90 -5,100)">${side.toFixed(1)} m</text>`;
+            }
+            svg += '</svg>';
+            container.innerHTML = svg;
+        }
+
+        // --- BEAM ANALYSIS ---
+        function addPointLoad() {
+            const container = getEl('pointLoadsContainer');
+            const newRow = document.createElement('div');
+            newRow.className = 'point-load-row grid grid-cols-11 gap-2 items-center mt-1';
+            newRow.innerHTML = `
+                <input type="number" placeholder="Load (kN)" class="form-input col-span-5 point-load-p">
+                <input type="number" placeholder="Dist (m)" class="form-input col-span-5 point-load-x">
+                <button class="text-red-500 hover:text-red-700 col-span-1" onclick="removePointLoad(this)">✖</button>`;
+            container.appendChild(newRow);
+        }
+        function removePointLoad(button) {
+            button.parentElement.remove();
+        }
+
+        function runBeamAnalysis() {
+            drawBeamVisual();
+            const L = getVal('beamLength');
+            const b = getVal('beamWidth')/1000;
+            const d = getVal('beamDepth')/1000;
+            const w = getVal('beamUDL');
+            const type = getEl('beamType').value;
+
+            if (isNaN(L) || L <= 0 || isNaN(b) || isNaN(d)) return;
+
+             // --- Material Quantities ---
+            const concreteVolume = L * b * d;
+            const steelWeight = concreteVolume * 0.015 * 7850; // Assume 1.5% steel by volume, 7850 kg/m3 density
+            const quantities = getMaterialQuantities(concreteVolume, 25, steelWeight);
+            setHTML('beamConcreteVol', quantities.concrete);
+            setHTML('beamCement', quantities.cement);
+            setHTML('beamSand', quantities.sand);
+            setHTML('beamAggregate', quantities.aggregate);
+            setHTML('beamSteel', quantities.steel);
+
+            const pointLoads = [];
+            document.querySelectorAll('.point-load-row').forEach(row => {
+                const P = parseFloat(row.querySelector('.point-load-p').value);
+                const x = parseFloat(row.querySelector('.point-load-x').value);
+                if (!isNaN(P) && !isNaN(x) && x >= 0 && x <= L) {
+                    pointLoads.push({ P, x });
+                }
+            });
+            
+            let Ra = 0, Rb = 0, Ma = 0;
+            
+            if (type === 'simply-supported') {
+                let totalMomentAboutB = (w * L * L) / 2;
+                let totalForce = w * L;
+                pointLoads.forEach(load => {
+                    totalMomentAboutB += load.P * (L - load.x);
+                    totalForce += load.P;
+                });
+                Ra = totalMomentAboutB / L;
+                Rb = totalForce - Ra;
+            } else { // Cantilever
+                let totalForce = w * L;
+                let totalMomentAboutA = (w * L * L) / 2;
+                pointLoads.forEach(load => {
+                    totalForce += load.P;
+                    totalMomentAboutA += load.P * load.x;
+                });
+                Ra = totalForce;
+                Ma = -totalMomentAboutA;
+            }
+
+            const criticalPoints = [0, L];
+            pointLoads.forEach(load => {
+                criticalPoints.push(load.x);
+                if (load.x > 0.001) criticalPoints.push(load.x - 0.001);
+                if (load.x < L - 0.001) criticalPoints.push(load.x + 0.001);
+            });
+            for(let i = 0; i <= 100; i++) criticalPoints.push(i * L / 100);
+
+            const plotPoints = [...new Set(criticalPoints)].filter(p => p >= 0 && p <= L).sort((a,b) => a - b);
+            const sfdData = [], bmdData = [];
+
+            plotPoints.forEach(x_pos => {
+                let V = 0, M = 0;
+                if (type === 'simply-supported') {
+                    V = Ra - w * x_pos;
+                    M = Ra * x_pos - (w * x_pos * x_pos) / 2;
+                    pointLoads.forEach(load => {
+                        if (load.x <= x_pos) { V -= load.P; M -= load.P * (x_pos - load.x); }
+                    });
+                } else {
+                    V = -w * x_pos;
+                    M = (-w * x_pos * x_pos) / 2;
+                    pointLoads.forEach(load => {
+                        if (load.x <= x_pos) { V -= load.P; M -= load.P * (x_pos - load.x); }
+                    });
+                }
+                sfdData.push({x: x_pos, y: V});
+                bmdData.push({x: x_pos, y: M});
+            });
+            
+            renderSimpleDiagram('sfd-visual', sfdData, 'kN', false, '#3b82f6');
+            renderSimpleDiagram('bmd-visual', bmdData, 'kNm', true, '#ef4444');
+        }
+
+        function renderSimpleDiagram(containerId, data, unit, invertY, color) {
+            const container = getEl(containerId);
+            if (!container) return;
+
+            const L = data[data.length - 1].x;
+            const yValues = data.map(p => p.y);
+            const yMax = Math.max(...yValues);
+            const yMin = Math.min(...yValues);
+            const magnitude = Math.max(Math.abs(yMax), Math.abs(yMin));
+            
+            if (magnitude === 0 && L > 0) {
+                container.innerHTML = `<svg viewBox="0 0 400 200" class="w-full h-full"><line x1="10" y1="100" x2="390" y2="100" stroke="#9ca3af" stroke-width="2"/></svg>`;
                 return;
             }
 
-            const calcs = calculateUDLValues(L, w);
-            let dataObject;
-            let title;
-            let lineColor;
-            let backgroundColor;
+            const toSvgX = (x) => 10 + (x / L) * 380;
+            const toSvgY = (y) => {
+                const scaledY = (y / magnitude) * 80; // Scale to fit in 160px height (80px up, 80px down)
+                return 100 - (invertY ? -scaledY : scaledY); // Center at 100px
+            };
+            
+            let pathData = `M ${toSvgX(data[0].x)} ${toSvgY(data[0].y)}`;
+            data.forEach(point => {
+                pathData += ` L ${toSvgX(point.x)} ${toSvgY(point.y)}`;
+            });
 
-            // --- SFD (Linear Function) ---
-            if (type === 'SFD') {
-                dataObject = generateSFDData(L, w);
-                title = `Max Shear Force (Vₘₐₓ): ${calcs.V_max} kN`;
-                lineColor = '#4f46e5'; // Indigo
-                backgroundColor = 'rgba(79, 70, 229, 0.3)';
-                
-            // --- BMD (Parabolic Function) ---
-            } else { // 'BMD'
-                dataObject = generateBMDData(L, w);
-                title = `Max Bending Moment (Mₘₐₓ): ${calcs.M_max} kN.m`;
-                lineColor = '#9333ea'; // Purple
-                backgroundColor = 'rgba(147, 51, 234, 0.3)';
-            }
-            
-            // Update output display
-            document.getElementById('diagram-output').textContent = title;
+            const zeroLineY = toSvgY(0);
+            const filledPath = pathData + ` L ${toSvgX(L)} ${zeroLineY} L ${toSvgX(0)} ${zeroLineY} Z`;
 
-            // Prepare chart data structure
-            const newDatasets = [{
-                label: type,
-                data: dataObject.data.map((val, index) => ({ x: parseFloat(dataObject.labels[index]), y: parseFloat(val) })),
-                borderColor: lineColor,
-                backgroundColor: backgroundColor,
-                borderWidth: 2,
-                fill: true,
-                pointRadius: 0,
-                tension: type === 'BMD' ? 0.3 : 0, // Parabola for BMD, straight lines for SFD
-                stepped: type === 'SFD' ? 'before' : false, // Shear is technically piecewise, but linear is close enough for UDL. Use tension 0 for straight line.
-                segment: {
-                    borderColor: ctx => type === 'SFD' ? lineColor : undefined,
-                }
-            }];
-            
-            // Reinitialize chart with new scales
-            setupChart(); 
-            
-            // Set new data
-            sfdBmdChart.data.labels = dataObject.labels;
-            sfdBmdChart.data.datasets = newDatasets;
-            
-            // Manually set X-axis scale min/max to L
-            sfdBmdChart.options.scales.x.min = 0;
-            sfdBmdChart.options.scales.x.max = L;
-            
-            // Set Y-axis title based on type
-            sfdBmdChart.options.scales.y.title.text = type === 'BMD' ? 'Bending Moment (kN.m)' : 'Shear Force (kN)';
-            
-            // Update the chart
-            sfdBmdChart.update('none'); // 'none' prevents animation which is good for quick redraws
+            const svg = `
+                <svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+                    <!-- Diagram Path -->
+                    <path d="${pathData}" stroke="${color}" stroke-width="2.5" fill="none"/>
+                    <!-- Fill Area -->
+                    <path d="${filledPath}" fill="${color}" fill-opacity="0.2"/>
+                    <!-- Zero Line -->
+                    <line x1="10" y1="${zeroLineY}" x2="390" y2="${zeroLineY}" stroke="#4b5563" stroke-width="1.5"/>
+                    <!-- Max/Min Labels -->
+                    <text x="15" y="${toSvgY(yMax) - 5}" font-size="12" fill="#111827" font-weight="600">${yMax.toFixed(2)} ${unit}</text>
+                    <text x="15" y="${toSvgY(yMin) + 15}" font-size="12" fill="#111827" font-weight="600">${yMin.toFixed(2)} ${unit}</text>
+                </svg>
+            `;
+            container.innerHTML = svg;
         }
+
+
+        // --- SLAB DESIGN ---
+        function runSlabDesign() {
+            drawSlabVisual();
+            const Lx = getVal('slabLx'), Ly = getVal('slabLy');
+            const LL = getVal('slabLL'), fck = getVal('slabFck'), fy = getVal('slabFy');
+            if (isNaN(Lx) || isNaN(Ly) || isNaN(LL) || isNaN(fck) || isNaN(fy) || Lx <= 0 || Ly <=0) return;
+
+            const ratio = Ly / Lx;
+            const slabType = ratio > 2 ? 'One-Way Slab' : 'Two-Way Slab';
+            setHTML('slabTypeResult', `${slabType} (${ratio.toFixed(2)})`);
+
+            const depth = Math.ceil((Lx * 1000) / 35 / 10) * 10; // Using L/35 for a more conservative depth
+            const d_m = depth / 1000;
+            setHTML('slabDepthResult', `${depth} mm`);
+
+            const DL = d_m * 25 + 1.0; // self-weight + floor finish
+            const Wu = 1.5 * (DL + LL);
+            
+            const ratioMap = {1.0:0.062, 1.1:0.074, 1.2:0.084, 1.3:0.093, 1.4:0.099, 1.5:0.104, 1.75:0.113, 2.0:0.118};
+            const ratios = Object.keys(ratioMap).map(parseFloat);
+            const closestRatio = ratios.reduce((prev, curr) => (Math.abs(curr - ratio) < Math.abs(prev - ratio) ? curr : prev));
+            const alpha_x = ratio > 2 ? 0.125 : ratioMap[closestRatio];
+            const Mux = alpha_x * Wu * Lx * Lx;
+            
+            const d_eff = depth - 25; // effective depth
+            const Ast_req_main = (0.5 * fck / fy) * (1 - Math.sqrt(1 - (4.6 * Mux * 1e6) / (fck * 1000 * d_eff * d_eff))) * 1000 * d_eff;
+            const Ast_min = (fy === 250 ? 0.15 : 0.12) / 100 * 1000 * depth;
+
+            const Ast_main_provided = Math.max(Ast_req_main, Ast_min);
+            const spacing_main = Math.floor(( (Math.PI/4*10*10) * 1000) / Ast_main_provided / 10) * 10;
+            setHTML('slabMainSteelResult', `Provide T10 @ ${Math.min(spacing_main, 300, 3*d_eff)} mm c/c`);
+            
+            const Ast_dist_provided = Ast_min;
+            const spacing_dist = Math.floor(( (Math.PI/4*8*8) * 1000) / Ast_dist_provided / 10) * 10;
+            setHTML('slabDistSteelResult', `Provide T8 @ ${Math.min(spacing_dist, 300, 5*d_eff)} mm c/c`);
+
+            // --- Material Quantities ---
+            const concreteVolume = Lx * Ly * d_m;
+            const mainSteelTotalArea = Ast_main_provided * Ly; // Area per meter * length
+            const distSteelTotalArea = Ast_dist_provided * Lx; // Area per meter * length
+            const steelVolume = (mainSteelTotalArea + distSteelTotalArea) / (1000*1000); // mm2 to m2
+            const steelWeight = steelVolume * 7850; // 7850 kg/m3 density
+            const quantities = getMaterialQuantities(concreteVolume, fck, steelWeight);
+            setHTML('slabConcreteVol', quantities.concrete);
+            setHTML('slabCement', quantities.cement);
+            setHTML('slabSand', quantities.sand);
+            setHTML('slabAggregate', quantities.aggregate);
+            setHTML('slabSteel', quantities.steel);
+        }
+
+        // --- COLUMN DESIGN ---
+        function runColumnDesign() {
+            const b = getVal('colWidth'), D = getVal('colDepth'), H = getVal('colHeight'), Pu_req = getVal('colPu');
+            const fck = getVal('colFck'), fy = getVal('colFy');
+            if (isNaN(b) || isNaN(D) || isNaN(H) || isNaN(Pu_req) || isNaN(fck) || isNaN(fy)) {
+                drawColumnVisual(); return;
+            }
+
+            const Ag = b * D;
+            const Asc_req = (Pu_req * 1000 - 0.4 * fck * Ag) / (0.67 * fy - 0.4 * fck);
+            const final_Asc = Math.max(Asc_req, 0.008 * Ag); // Ensure minimum 0.8% steel
+            
+            setHTML('colSteelAreaResult', `${final_Asc > 0 ? final_Asc.toFixed(2) : 0} mm²`);
+            
+            const pt = (final_Asc / Ag) * 100;
+            setHTML('colSteelPercentResult', `${pt > 0 ? pt.toFixed(2) : 0.00} %`);
+
+            let reinfText = "-";
+            let status = "SAFE";
+            let color = "text-green-600";
+            let numBars = 0, dia = 0;
+
+            if (pt > 6.0) {
+                status = "FAIL: Steel > 6.0%"; color = "text-red-600";
+                reinfText = "Increase column size.";
+            } else {
+                 const barDiams = [12, 16, 20, 25, 32];
+                 let bestOption = {num: 0, dia: 0, area: 0};
+                 for(const d of barDiams) {
+                     const area = Math.PI/4 * d * d;
+                     const n = Math.ceil(final_Asc / area);
+                     if (n >= 4 && n % 2 === 0) {
+                         bestOption = { num: n, dia: d, area: n * area };
+                         break;
+                     }
+                 }
+                 numBars = bestOption.num;
+                 dia = bestOption.dia;
+                 reinfText = `${numBars} T${dia} (${bestOption.area.toFixed(0)} mm²)`;
+            }
+            setHTML('colReinforcementResult', reinfText);
+
+            const statusEl = getEl('colStatusResult');
+            statusEl.textContent = status;
+            statusEl.className = `result-value text-2xl font-black ${color}`;
+            
+            // --- Material Quantities ---
+            const concreteVolume = (b/1000) * (D/1000) * H;
+            const mainSteelVolume = (final_Asc / (1000*1000)) * H;
+            // Estimate lateral ties as ~0.5% of concrete volume (a rough but common estimate)
+            const tiesVolume = concreteVolume * 0.005;
+            const steelWeight = (mainSteelVolume + tiesVolume) * 7850;
+            const quantities = getMaterialQuantities(concreteVolume, fck, steelWeight);
+            setHTML('colConcreteVol', quantities.concrete);
+            setHTML('colCement', quantities.cement);
+            setHTML('colSand', quantities.sand);
+            setHTML('colAggregate', quantities.aggregate);
+            setHTML('colSteel', quantities.steel);
+
+            drawColumnVisual();
+        }
+        
+        // --- FOOTING SIZING ---
+        function runFootingSizing() {
+            const P = getVal('footingLoad'), SBC = getVal('footingSBC'), Df = getVal('footingDepth')/1000;
+            if (isNaN(P) || isNaN(SBC) || isNaN(Df) || SBC <= 0) {
+                drawFootingVisual();
+                return;
+            }
+
+            const P_total = P * 1.10;
+            const Area_req = P_total / SBC;
+            const side = Math.ceil(Math.sqrt(Area_req) * 10) / 10;
+
+            setHTML('footingTotalLoad', `${P_total.toFixed(2)} kN`);
+            setHTML('footingArea', `${Area_req.toFixed(2)} m²`);
+            setHTML('footingSize', `${side.toFixed(1)}m x ${side.toFixed(1)}m`);
+
+            // --- Material Quantities ---
+            const concreteVolume = side * side * Df;
+            const steelWeight = concreteVolume * 0.008 * 7850; // Assume 0.8% steel for footing
+            const quantities = getMaterialQuantities(concreteVolume, 20, steelWeight); // Assume M20 for footing
+            setHTML('footingConcreteVol', quantities.concrete);
+            setHTML('footingCement', quantities.cement);
+            setHTML('footingSand', quantities.sand);
+            setHTML('footingAggregate', quantities.aggregate);
+            setHTML('footingSteel', quantities.steel);
+
+            drawFootingVisual();
+        }
+        
+        // --- EVENT LISTENERS FOR INPUTS AND BUTTONS ---
+        document.querySelectorAll('#beam-analysis input, #beam-analysis select').forEach(el => el.addEventListener('input', runBeamAnalysis));
+        document.querySelectorAll('#slab-design input, #slab-design select').forEach(el => el.addEventListener('input', runSlabDesign));
+        document.querySelectorAll('#column-design input, #column-design select').forEach(el => el.addEventListener('input', runColumnDesign));
+        document.querySelectorAll('#footing-sizing input, #footing-sizing select').forEach(el => el.addEventListener('input', runFootingSizing));
+        
+        getEl('runBeamAnalysis').addEventListener('click', runBeamAnalysis);
+        getEl('runSlabDesign').addEventListener('click', runSlabDesign);
+        getEl('runColumnDesign').addEventListener('click', runColumnDesign);
+        getEl('runFootingSizing').addEventListener('click', runFootingSizing);
 
     </script>
 </body>
 </html>
+
