@@ -3,1030 +3,345 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Structural Design Suite (IS 456)</title>
+    <title>Integrated Structural Design Suite</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Load Three.js for Canvas rendering -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    
-    <!-- KaTeX CSS and JS for Math Rendering -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" xintegrity="sha384-0a6M/KkYp+07WbW6+R0x/pW1/s60/c6g+q5tX5p9T/k5c9C/v3gG1rVl6a0zJ5X2R" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" xintegrity="sha384-yS33P9h9P7h/c7P24c7L7t7x5c/c6g+q5tX5p9T/k5c9C/v3gG1rVl6a0zJ5X2R" crossorigin="anonymous"></script>
-
-    <!-- Load Firebase/Firestore -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, query, limit, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Set Firebase Log Level
-        setLogLevel('Debug');
-
-        // Global variables (from environment)
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-structural-app';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        let app, db, auth, userId = 'loading...';
-        
-        window.isAuthReady = false; 
-
-        // Initialize Firebase and set up Auth
-        async function initFirebase() {
-            if (!firebaseConfig) {
-                console.error("Firebase config is missing.");
-                document.getElementById('userIdDisplay').textContent = "Error: Config missing";
-                return;
-            }
-
-            try {
-                app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-
-                onAuthStateChanged(auth, (user) => {
-                    const wasAuthReady = window.isAuthReady;
-                    if (user) {
-                        userId = user.uid;
-                        document.getElementById('userIdDisplay').textContent = `User ID: ${userId}`;
-                        window.isAuthReady = true;
-                    } else {
-                        userId = 'anonymous';
-                        document.getElementById('userIdDisplay').textContent = `User ID: ${userId}`;
-                        window.isAuthReady = true;
-                    }
-                    
-                    if (!wasAuthReady && window.isAuthReady) {
-                        setupFirestoreListeners();
-                        window.runInitialCalculationIfReady(); 
-                    }
-                });
-
-            } catch (error) {
-                console.error("Firebase initialization or sign-in failed:", error);
-                document.getElementById('userIdDisplay').textContent = `Error: ${error.message}`;
-            }
-        }
-
-        function getCollectionRef() {
-            const path = `/artifacts/${appId}/public/data/design_history`;
-            return collection(db, path);
-        }
-
-        // --- Firestore Real-time Listeners ---
-        function setupFirestoreListeners() {
-            if (!window.isAuthReady || !db) return;
-
-            const historyQuery = query(
-                getCollectionRef(),
-                orderBy("timestamp", "desc"),
-                limit(5)
-            );
-
-            onSnapshot(historyQuery, (snapshot) => {
-                const historyList = document.getElementById('designHistoryList');
-                historyList.innerHTML = '';
-                if (snapshot.empty) {
-                     historyList.innerHTML = '<li class="p-3 text-[#8686AC]">No designs found. Run a calculation to save.</li>';
-                }
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const li = document.createElement('li');
-                    li.className = 'p-3 bg-[#1A1A47] hover:bg-[#202050] transition duration-150 rounded-lg cursor-pointer text-sm text-gray-200 truncate border-l-4 border-[#8686AC]';
-                    const timestamp = data.timestamp?.toDate ? data.timestamp.toDate().toLocaleTimeString() : 'N/A';
-                    
-                    let statusClass = 'text-green-400';
-                    if (data.status.includes('Unsafe')) statusClass = 'text-red-400';
-
-                    li.innerHTML = `
-                        <div class="font-medium flex justify-between items-center">
-                            <span>M-Req: ${data.momentRequired} kNm</span>
-                            <span class="${statusClass} font-bold">${data.status.replace(/ \((Flexure|Shear)\)/, '')}</span>
-                        </div>
-                        <div class="text-xs text-[#8686AC] mt-0.5">
-                            Span: ${data.span} m | ${timestamp}
-                        </div>
-                    `;
-                    li.onclick = () => loadDesignFromHistory(data);
-                    historyList.appendChild(li);
-                });
-            }, (error) => {
-                console.error("Error listening to history collection:", error);
-            });
-        }
-
-        function loadDesignFromHistory(data) {
-            document.getElementById('spanInput').value = data.span;
-            document.getElementById('dInput').value = data.depth;
-            document.getElementById('bInput').value = data.width;
-            document.getElementById('fckInput').value = data.fck;
-            document.getElementById('fyInput').value = data.fy;
-            document.getElementById('muInput').value = data.momentRequired;
-            document.getElementById('vuInput').value = data.shearRequired;
-            
-            document.getElementById('calculateButton').click();
-
-            const messageBox = document.getElementById('messageBox');
-            messageBox.innerHTML = createMessage('Loaded previous design history.', 'info');
-        }
-
-
-        window.saveDesignToFirestore = async function(designData) {
-            if (!window.isAuthReady || !db) {
-                console.error("Firestore not ready. Cannot save data.");
-                return;
-            }
-            try {
-                const docRef = doc(getCollectionRef(), new Date().getTime().toString());
-                
-                await setDoc(docRef, {
-                    ...designData,
-                    userId: userId,
-                    timestamp: new Date()
-                });
-            } catch (e) {
-                console.error("Error adding document: ", e);
-            }
-        }
-        
-        /**
-         * Renders all elements marked with the 'math-label' class using KaTeX.
-         * This should run once on load.
-         */
-        function renderAllStaticMath() {
-            if (typeof katex === 'undefined') {
-                // If KaTeX hasn't loaded yet, try again shortly.
-                setTimeout(renderAllStaticMath, 100);
-                return;
-            }
-            
-            // Render static elements using data-latex
-            document.querySelectorAll('.math-label, .diagram-label').forEach(el => {
-                let latex = el.getAttribute('data-latex');
-
-                if (latex) {
-                    // Initial render uses '\text{N/A}' as the value placeholder
-                    let initialLatex = latex.replace(/\{\{VALUE\}\}/g, '\\text{N/A}');
-
-                    try {
-                        // Use a custom KaTeX color (e.g., the secondary accent color)
-                        const coloredLatex = `\\color{#8686AC}{${initialLatex}}`;
-                        
-                        katex.render(coloredLatex, el, {
-                            throwOnError: false,
-                            displayMode: false 
-                        });
-                    } catch (e) {
-                        console.error("KaTeX rendering error for element:", el, e);
-                        // Fallback to plain text if rendering fails
-                        el.textContent = `[Math Render Error: ${latex}]`; 
-                    }
-                }
-            });
-        }
-
-        // Initialize on load
-        window.onload = function() {
-            // Wait for Katex to be available before running initial render
-            const checkKatexReady = setInterval(() => {
-                if (typeof katex !== 'undefined') {
-                    clearInterval(checkKatexReady);
-                    renderAllStaticMath(); // Render LaTeX once on load
-                    initFirebase();
-                    initCanvas(); 
-                }
-            }, 50);
-        }
-
-        window.db = db;
-        window.auth = auth;
-        window.app = app;
-    </script>
-
+    <!-- Load Chart.js for diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
-        
-        /* Dark Theme Colors:
-            #0F0E47 - Primary Background
-            #272757 - Card/Panel Background
-            #505081 - Primary Accent
-            #8686AC - Secondary Accent / Default Text
-        */
-
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0F0E47; /* Primary Background */
-            color: #8686AC; /* Secondary Accent / Default Text */
+            background-color: #171822; /* Darker background */
+            color: #e5e7eb;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-
-        .main-card {
-            background-color: #272757; /* Card/Panel Background */
-            color: #E0E0FF; /* Light text for readability */
+        .container {
+            width: 100%;
+            max-width: 1024px;
+            padding: 2rem;
         }
-        
-        /* Input styling for dark mode */
-        .input-group input, .input-group select {
-            background-color: #0F0E47; /* Darkest background for inputs */
-            border-color: #505081; /* Primary Accent border */
-            color: #E0E0FF;
+        .nav-button {
+            transition: all 0.2s;
         }
-
-        .input-group input:focus, .input-group select:focus {
-            border-color: #8686AC;
-            box-shadow: 0 0 0 1px #8686AC;
+        .nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.4);
         }
-
-        .tab-button {
-            transition: all 0.3s ease;
-            color: #8686AC;
+        .diagram-canvas {
+            background-color: #28293d; /* Diagram background */
+            border-radius: 0.75rem;
+            padding: 1rem;
+            height: 400px; /* Fixed height for diagram area */
         }
-
-        .tab-button.active {
-            border-bottom: 4px solid #505081; /* Primary Accent */
-            color: #E0E0FF; /* White text when active */
-            font-weight: 600;
-            background-color: #272757;
-        }
-
-        .tab-button:not(.active):hover {
-            background-color: #1A1A47;
-            color: #E0E0FF;
-        }
-
-        .input-group label {
-            font-size: 0.875rem; 
-            font-weight: 500; 
-            color: #8686AC; 
-        }
-
-        /* Result Box Styling */
-        .result-box {
-            background-color: #1A1A47;
-            color: #E0E0FF;
-            border: 1px solid #505081;
-        }
-        .result-box.safe {
-            background-color: #1a4738; /* Dark Green */
-            border-left: 6px solid #34D399; /* Light Green */
-            color: #D1FAE5; 
-        }
-
-        .result-box.unsafe {
-            background-color: #471a1a; /* Dark Red */
-            border-left: 6px solid #F87171; /* Light Red */
-            color: #FEE2E2; 
-        }
-
-        /* Message Box Styling */
-        .message-box.info {
-            background-color: #1a2c47; 
-            border-left: 6px solid #505081; 
-            color: #E0E0FF; 
-        }
-
-        /* Diagram Styles */
-        #diagramCanvasContainer {
-            background-color: #0F0E47;
-            border: 2px solid #505081;
-        }
-
-        .diagram-label {
-            background-color: rgba(39, 39, 87, 0.9); /* #272757 with opacity */
-            color: #E0E0FF;
-        }
-        
     </style>
 </head>
+<body onload="initApp()">
 
-<body class="min-h-screen flex flex-col items-center p-4 sm:p-6">
-
-    <!-- Main Container -->
-    <div class="w-full max-w-6xl main-card rounded-xl shadow-2xl p-4 sm:p-8">
-        
+    <div class="container">
         <!-- Header -->
-        <header class="mb-6 border-b border-[#505081] pb-4">
-            <h1 class="text-3xl font-extrabold text-[#E0E0FF] leading-tight">
+        <header class="text-center py-6 mb-8 bg-[#28293d] rounded-xl shadow-lg">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-indigo-400">
                 Integrated Structural Design Suite
             </h1>
-            <p class="text-[#8686AC] mt-1">
+            <p class="text-sm text-gray-400 mt-1">
                 IS 456:2000 Code Checks and Visualization Tools
             </p>
-            <div id="userIdDisplay" class="text-xs text-[#8686AC] mt-2 font-mono">
-                Loading User ID...
-            </div>
         </header>
 
-        <!-- Tab Navigation -->
-        <div class="flex border-b border-[#505081] mb-6 overflow-x-auto bg-[#0F0E47] rounded-t-lg">
-            <button id="tabDesign" onclick="switchTab('design')" class="tab-button active flex-1 py-3 px-4 border-b-4 border-transparent min-w-[150px]">
-                <span class="math-label" data-latex="\text{M}_u / \text{V}_u"></span> Check
+        <!-- Navigation Tabs -->
+        <nav class="flex justify-center space-x-2 md:space-x-4 mb-8">
+            <button onclick="navigate('MuVuCheck')" class="nav-button bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700">
+                Mᵤ/Vᵤ Check
             </button>
-            <button id="tabDiagrams" onclick="switchTab('diagrams')" class="tab-button flex-1 py-3 px-4 border-b-4 border-transparent min-w-[150px]">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM5.5 7A1.5 1.5 0 017 8.5h6A1.5 1.5 0 0114.5 7a1.5 1.5 0 010 3H13a1 1 0 000 2h1.5a1.5 1.5 0 010 3H7a1.5 1.5 0 010-3H8a1 1 0 100-2H5.5a1.5 1.5 0 010-3zM10 17a1 1 0 100-2 1 1 0 000 2z"/></svg>
+            <button onclick="navigate('SFDBMD')" class="nav-button bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-xl">
                 SFD & BMD Diagrams
             </button>
-             <button id="tabSlab" onclick="switchTab('slab')" class="tab-button flex-1 py-3 px-4 border-b-4 border-transparent min-w-[150px]">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zM4 6h12v2H4V6zm0 4h12v4H4v-4z"/></svg>
+            <button onclick="navigate('SlabTool')" class="nav-button bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700">
                 Slab Estimation Tool
             </button>
-            <button id="tabCantilever" onclick="switchTab('cantilever')" class="tab-button flex-1 py-3 px-4 border-b-4 border-transparent min-w-[150px]">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.3 2.1c-.6-.7-1.4-1.1-2.3-1.1s-1.7.4-2.3 1.1L3.7 5.7c-.7.8-.8 2-.2 2.8l2.5 2.5a.5.5 0 00.7 0l2.5-2.5a.5.5 0 000-.7L6.6 4.9l-.3-.3a1.5 1.5 0 01-.2-2.1c.3-.5.9-.7 1.4-.7h3.1c.5 0 1.1.2 1.4.7.4.6.4 1.4 0 2L9.7 7.7a.5.5 0 00.7 0l2.5-2.5c.6-.8.5-2-.2-2.8L11.3 2.1z" clip-rule="evenodd"/></svg>
+            <button onclick="navigate('CantileverDesign')" class="nav-button bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700">
                 Cantilever Beam Design
             </button>
-            <button id="tabHistory" onclick="switchTab('history')" class="tab-button flex-1 py-3 px-4 border-b-4 border-transparent min-w-[150px]">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l3 3a1 1 0 001.414-1.414L11 9.586V6z" clip-rule="evenodd"/></svg>
+            <button onclick="navigate('DesignHistory')" class="nav-button bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700">
                 Design History
             </button>
-        </div>
+        </nav>
 
-        <!-- RC Beam Flexure/Shear Check Content -->
-        <div id="contentDesign" class="tab-content">
-            <div class="grid lg:grid-cols-3 gap-8">
+        <!-- Main Content Area -->
+        <main id="content-area" class="p-6 bg-[#212130] rounded-xl shadow-xl border border-[#3a3b4f]">
+            <!-- SFD & BMD Content (Default View) -->
+            <div id="SFDBMD-view" class="active-view">
+                <h2 class="text-2xl font-bold text-indigo-300 mb-4 text-center">Shear Force and Bending Moment Diagrams (UDL)</h2>
                 
-                <!-- Input Panel (Column 1 & 2) -->
-                <div class="lg:col-span-2">
-                    <h2 class="text-xl font-semibold text-[#E0E0FF] mb-4 border-b border-[#505081] pb-2">RC Beam Flexure Check (Simply Supported)</h2>
-                    <form id="designForm" class="grid sm:grid-cols-2 gap-x-6 gap-y-4 mb-6 p-6 bg-[#0F0E47] rounded-xl shadow-lg border border-[#505081]">
-                        
-                        <!-- Geometry Inputs -->
-                        <div class="col-span-2">
-                            <h3 class="text-lg font-medium text-[#8686AC] mb-3 border-b border-[#505081] pb-1">Geometry & Load</h3>
-                        </div>
-                        <div class="input-group">
-                            <label for="spanInput">Clear Span (L) [m]</label>
-                            <input type="number" id="spanInput" value="5" min="0.1" step="0.1" class="w-full mt-1 p-2 border rounded-lg focus:ring-[#8686AC] focus:border-[#8686AC]">
-                        </div>
-                        <div class="input-group">
-                            <label for="dInput">Overall Depth (D) [mm]</label>
-                            <input type="number" id="dInput" value="450" min="10" step="1" class="w-full mt-1 p-2 border rounded-lg focus:ring-[#8686AC] focus:border-[#8686AC]">
-                        </div>
-                        <div class="input-group">
-                            <label for="bInput">Width of Beam (b) [mm]</label>
-                            <input type="number" id="bInput" value="300" min="10" step="1" class="w-full mt-1 p-2 border rounded-lg focus:ring-[#8686AC] focus:border-[#8686AC]">
-                        </div>
-                        <div class="input-group">
-                            <label for="effectiveCoverInput"><span class="math-label" data-latex="\text{Effective Cover} (d')"></span> [mm]</label>
-                            <input type="number" id="effectiveCoverInput" value="50" min="10" step="1" class="w-full mt-1 p-2 border rounded-lg focus:ring-[#8686AC] focus:border-[#8686AC]">
-                        </div>
+                <!-- Input Parameters (Simplified for UDL Example) -->
+                <div class="flex flex-col md:flex-row gap-4 mb-6 justify-center">
+                    <div class="flex items-center space-x-2">
+                        <label for="spanLength" class="text-gray-400">Span Length (L, m):</label>
+                        <input type="number" id="spanLength" value="5" min="1" step="0.1"
+                               class="bg-gray-700 text-white p-2 rounded-lg w-20 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <label for="udlValue" class="text-gray-400">UDL (w, kN/m):</label>
+                        <input type="number" id="udlValue" value="20" min="0.1" step="0.1"
+                               class="bg-gray-700 text-white p-2 rounded-lg w-20 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
 
-                        <!-- Material Inputs -->
-                        <div class="col-span-2 mt-4">
-                            <h3 class="text-lg font-medium text-[#8686AC] mb-3 border-b border-[#505081] pb-1">Material Grades</h3>
-                        </div>
-                        <div class="input-group">
-                            <label for="fckInput"><span class="math-label" data-latex="\text{Concrete Grade} (f_{ck})"></span> [N/mm²]</label>
-                            <select id="fckInput" class="w-full mt-1 p-2 border rounded-lg focus:ring-[#8686AC] focus:border-[#8686AC]">
-                                <option value="20">M20 (<span class="math-label" data-latex="f_{ck}=20"></span>)</option>
-                                <option value="25">M25 (<span class="math-label" data-latex="f_{ck}=25"></span>)</option>
-                                <option value="30">M30 (<span class="math-label" data-latex="f_{ck}=30"></span>)</option>
-                            </select>
-                        </div>
-                        <div class="input-group">
-                            <label for="fyInput"><span class="math-label" data-latex="\text{Steel Grade} (f_y)"></span> [N/mm²]</label>
-                            <select id="fyInput" class="w-full mt-1 p-2 border rounded-lg focus:ring-[#8686AC] focus:border-[#8686AC]">
-                                <option value="415">Fe 415</option>
-                                <option value="250">Fe 250</option>
-                                <option value="500">Fe 500</option>
-                            </select>
-                        </div>
-                        
-                        <!-- Load & Area of Steel Inputs -->
-                        <div class="col-span-2 mt-4">
-                            <h3 class="text-lg font-medium text-[#8686AC] mb-3 border-b border-[#505081] pb-1">Factored Loads & Reinforcement</h3>
-                        </div>
-                        <div class="input-group">
-                            <label for="muInput"><span class="math-label" data-latex="\text{Required Factored Moment} (\text{M}_{u, req})"></span> [kNm]</label>
-                            <input type="number" id="muInput" value="75" min="0" step="0.1" class="w-full mt-1 p-2 border rounded-lg focus:ring-[#8686AC] focus:border-[#8686AC]">
-                        </div>
-                        <div class="input-group">
-                            <label for="vuInput"><span class="math-label" data-latex="\text{Required Factored Shear} (\text{V}_{u, req})"></span> [kN]</label>
-                            <input type="number" id="vuInput" value="50" min="0" step="0.1" class="w-full mt-1 p-2 border rounded-lg focus:ring-[#8686AC] focus:border-[#8686AC]">
-                        </div>
-                         <div class="input-group col-span-2">
-                            <label for="astInput"><span class="math-label" data-latex="\text{Provided Area of Steel} (A_{st, prov})"></span> [mm²]</label>
-                            <input type="number" id="astInput" value="1000" min="0" step="1" class="w-full mt-1 p-2 border rounded-lg focus:ring-[#8686AC] focus:border-[#8686AC]">
-                        </div>
-
-
-                    </form>
-                    
-                    <button id="calculateButton" onclick="calculateDesign()" class="w-full bg-[#505081] hover:bg-[#8686AC] text-[#0F0E47] font-bold py-3 px-4 rounded-lg transition duration-300 shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-[#505081] focus:ring-opacity-50 flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0l2.585 2.585A1 1 0 0021 18.172V5.828a1 1 0 00-1.707-.707L16 8m-4 0h.01"/></svg>
-                        Run Design Check
+                <!-- Diagram Controls -->
+                <div class="flex justify-center space-x-4 mb-8">
+                    <button onclick="drawDiagram('BMD')" id="bmd-button"
+                            class="bg-purple-600 text-white px-6 py-3 rounded-xl font-semibold shadow-md hover:bg-purple-700 transition duration-150">
+                        Show Bending Moment Diagram
                     </button>
+                    <button onclick="drawDiagram('SFD')" id="sfd-button"
+                            class="bg-indigo-600 text-white px-6 py-3 rounded-xl font-semibold shadow-md hover:bg-indigo-700 transition duration-150">
+                        Show Shear Force Diagram
+                    </button>
+                </div>
+
+                <!-- Result and Canvas -->
+                <div id="diagram-output" class="text-center mb-6 text-xl text-green-400 font-mono">
                     
-                    <div id="messageBox" class="mt-4">
-                        <!-- Messages (Info/Error) will appear here -->
-                    </div>
+                </div>
+                
+                <div class="diagram-canvas">
+                    <canvas id="diagramCanvas"></canvas>
                 </div>
 
-                <!-- Output Panel (Column 3) -->
-                <div class="lg:col-span-1">
-                    <h2 class="text-xl font-semibold text-[#E0E0FF] mb-4 border-b border-[#505081] pb-2">Design Results</h2>
-                    
-                    <div id="flexureResult" class="result-box rounded-xl p-5 mb-6 shadow-md transition duration-300">
-                        <h3 class="font-bold text-lg mb-3 flex items-center text-[#8686AC]">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-[#505081]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                            Flexural Strength (<span class="math-label" data-latex="M_{u, lim}"></span>)
-                        </h3>
-                        <div class="space-y-3">
-                            <div class="flex justify-between items-center text-sm border-b border-[#505081] pb-1">
-                                <span class="text-[#8686AC]"><span class="math-label" data-latex="\text{Effective Depth} (d)"></span>:</span>
-                                <span id="effectiveDepthOutput" class="font-mono text-[#E0E0FF]">N/A</span>
-                            </div>
-                            <div class="flex justify-between items-center text-sm border-b border-[#505081] pb-1">
-                                <span class="text-[#8686AC]"><span class="math-label" data-latex="\text{Limiting Moment Factor} (R_{u, lim})"></span>:</span>
-                                <span id="RuLimOutput" class="font-mono text-[#E0E0FF]">N/A</span>
-                            </div>
-                            <div class="flex justify-between items-center text-sm border-b border-[#505081] pb-1">
-                                <span class="text-[#8686AC]"><span class="math-label" data-latex="\text{Limiting Moment} (M_{u, lim})"></span>:</span>
-                                <span id="MuLimOutput" class="font-mono text-xl font-bold text-[#E0E0FF]">N/A</span>
-                            </div>
-                            <div class="flex justify-between items-center text-sm border-b border-[#505081] pb-1">
-                                <span class="text-[#8686AC]"><span class="math-label" data-latex="\text{Required Steel Area} (A_{st, req})"></span>:</span>
-                                <span id="AstRequiredOutput" class="font-mono text-[#E0E0FF]">N/A</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Main Status Summary -->
-                    <div id="statusSummary" class="result-box p-5 rounded-xl shadow-lg text-center border-2 border-dashed border-[#505081]">
-                        <h4 id="statusTitle" class="text-2xl font-extrabold mb-1 text-[#E0E0FF]">RUN CALCULATION</h4>
-                        <p id="statusMessage" class="text-sm text-[#8686AC]">Click "Run Design Check" to start the analysis.</p>
-                        <p id="statusComparison" class="text-xs mt-2 font-mono text-[#505081]"></p>
-                    </div>
-
+                <div class="mt-8 p-4 bg-[#3a3b4f] rounded-lg">
+                    <p class="text-sm text-gray-400 italic">
+                        Note: Calculations assume a **Simply Supported Beam with UDL**.
+                        <br>Max Values: $M_{max} = \frac{wL^2}{8}$, $V_{max} = \frac{wL}{2}$.
+                    </p>
                 </div>
             </div>
-        </div>
 
-        <!-- Diagrams Tab Content -->
-        <div id="contentDiagrams" class="tab-content hidden">
-            <h2 class="text-xl font-semibold text-[#E0E0FF] mb-4 border-b border-[#505081] pb-2">Shear Force and Bending Moment Diagrams (UDL)</h2>
-            
-            <div class="flex justify-center space-x-4 mb-4">
-                <button onclick="setCurrentDiagram('BMD')" id="diagramToggleBMD" class="px-6 py-2 rounded-full font-semibold transition bg-[#505081] text-[#0F0E47] shadow-lg hover:bg-[#8686AC]">
-                    Show Bending Moment Diagram
-                </button>
-                 <button onclick="setCurrentDiagram('SFD')" id="diagramToggleSFD" class="px-6 py-2 rounded-full font-semibold transition bg-[#0F0E47] text-[#8686AC] hover:bg-[#1A1A47] border border-[#505081]">
-                    Show Shear Force Diagram
-                </button>
-            </div>
+            <!-- Placeholder for other views -->
+            <div id="MuVuCheck-view" class="hidden text-center text-gray-500">Mᵤ/Vᵤ Check Content</div>
+            <div id="SlabTool-view" class="hidden text-center text-gray-500">Slab Estimation Tool Content</div>
+            <div id="CantileverDesign-view" class="hidden text-center text-gray-500">Cantilever Beam Design Content</div>
+            <div id="DesignHistory-view" class="hidden text-center text-gray-500">Design History Content</div>
 
-            <div id="diagramCanvasContainer" class="shadow-xl">
-                <!-- Three.js canvas will be injected here -->
-                <div id="diagramLabelsOverlay">
-                    <div id="labelSpan" class="diagram-label left-1/2 -translate-x-1/2 bottom-[10px] border-b-2 border-[#505081] p-1">Span (L) = N/A</div>
-                    <!-- The following labels use KaTeX templates -->
-                    <div id="labelVmaxLeft" class="diagram-label left-[5%] top-[10%] text-[#8686AC] border-l-2 border-[#8686AC] math-label" data-latex="\text{V}_{max} = {{VALUE}} \text{ kN}"></div>
-                    <div id="labelMmax" class="diagram-label left-1/2 -translate-x-1/2 top-[10%] text-[#F87171] border-t-2 border-[#F87171] math-label" data-latex="\text{M}_{max} = {{VALUE}} \text{ kNm}"></div>
-                    <div id="labelVmaxRight" class="diagram-label right-[5%] top-[10%] text-[#8686AC] border-r-2 border-[#8686AC] math-label" data-latex="\text{V}_{max} = {{VALUE}} \text{ kN}"></div>
-                </div>
-            </div>
-            <div class="mt-4 p-4 bg-[#1A1A47] rounded-xl text-sm text-[#8686AC] border border-[#505081]">
-                <p><strong>Note:</strong> Diagrams are shown for a **Simply Supported Beam with UDL** and are scaled using the **Factored Moment (<span class="math-label" data-latex="M_{u, req}"></span>) and Shear (<span class="math-label" data-latex="V_{u, req}"></span>)** values provided in the design check tab to define the visual height.</p>
-            </div>
-        </div>
-        
-        <!-- Slab Estimation Tab Content -->
-        <div id="contentSlab" class="tab-content hidden">
-            <h2 class="text-xl font-semibold text-[#E0E0FF] mb-4 border-b border-[#505081] pb-2">One-Way Slab Design and Estimation (Placeholder)</h2>
-            <div class="p-6 bg-[#0F0E47] rounded-xl shadow-inner border border-[#505081]">
-                 <p class="text-[#8686AC] font-semibold mb-4">
-                    This section is a **placeholder**. The calculation logic will be implemented in the next update.
-                </p>
-                <form class="grid sm:grid-cols-2 gap-x-6 gap-y-4">
-                    <div class="input-group">
-                        <label for="slabThicknessInput">Slab Thickness (D) [mm]</label>
-                        <input type="number" id="slabThicknessInput" value="150" class="w-full mt-1 p-2 border rounded-lg">
-                    </div>
-                    <div class="input-group">
-                        <label for="liveLoadInput">Live Load (LL) [kN/m²]</label>
-                        <input type="number" id="liveLoadInput" value="3" class="w-full mt-1 p-2 border rounded-lg">
-                    </div>
-                     <div class="input-group">
-                        <label for="spanShortInput"><span class="math-label" data-latex="\text{Short Span} (L_x)"></span> [m]</label>
-                        <input type="number" id="spanShortInput" value="4" class="w-full mt-1 p-2 border rounded-lg">
-                    </div>
-                    <div class="input-group">
-                        <label for="spanLongInput"><span class="math-label" data-latex="\text{Long Span} (L_y)"></span> [m]</label>
-                        <input type="number" id="spanLongInput" value="6" class="w-full mt-1 p-2 border rounded-lg">
-                    </div>
-                    <div class="input-group">
-                        <label for="slabFckInput"><span class="math-label" data-latex="\text{Concrete Grade} (f_{ck})"></span> [N/mm²]</label>
-                        <select id="slabFckInput" class="w-full mt-1 p-2 border rounded-lg">
-                            <option value="20">M20</option>
-                        </select>
-                    </div>
-                    <div class="input-group">
-                        <label for="slabFyInput"><span class="math-label" data-latex="\text{Steel Grade} (f_y)"></span> [N/mm²]</label>
-                        <select id="slabFyInput" class="w-full mt-1 p-2 border rounded-lg">
-                            <option value="415">Fe 415</option>
-                        </select>
-                    </div>
-                </form>
-                <button disabled class="w-full mt-6 bg-[#505081] text-[#0F0E47] font-bold py-3 rounded-lg opacity-50 cursor-not-allowed">
-                    Calculate Slab Reinforcement (Coming Soon)
-                </button>
-            </div>
-        </div>
-
-        <!-- Cantilever Beam Tab Content -->
-        <div id="contentCantilever" class="tab-content hidden">
-            <h2 class="text-xl font-semibold text-[#E0E0FF] mb-4 border-b border-[#505081] pb-2">Cantilever Beam Design Check (Placeholder)</h2>
-            <div class="p-6 bg-[#0F0E47] rounded-xl shadow-inner border border-[#505081]">
-                <p class="text-[#8686AC] font-semibold mb-4">
-                    This section is a **placeholder**. The calculation logic will be implemented in the next update.
-                </p>
-                <form class="grid sm:grid-cols-2 gap-x-6 gap-y-4">
-                    <div class="input-group">
-                        <label for="cantileverSpanInput"><span class="math-label" data-latex="\text{Cantilever Span} (L_c)"></span> [m]</label>
-                        <input type="number" id="cantileverSpanInput" value="2.5" class="w-full mt-1 p-2 border rounded-lg">
-                    </div>
-                    <div class="input-group">
-                        <label for="loadTypeCantilever">Load Type</label>
-                        <select id="loadTypeCantilever" class="w-full mt-1 p-2 border rounded-lg">
-                            <option value="UDL">Uniformly Distributed Load (UDL)</option>
-                            <option value="point">Point Load at End (P)</option>
-                        </select>
-                    </div>
-                    <div class="input-group">
-                        <label for="cantileverDInput">Overall Depth (D) [mm]</label>
-                        <input type="number" id="cantileverDInput" value="350" class="w-full mt-1 p-2 border rounded-lg">
-                    </div>
-                     <div class="input-group">
-                        <label for="cantileverLoadInput"><span class="math-label" data-latex="\text{Factored Load} (w_u / P_u)"></span> [kN/m or kN]</label>
-                        <input type="number" id="cantileverLoadInput" value="30" class="w-full mt-1 p-2 border rounded-lg">
-                    </div>
-                </form>
-                <button disabled class="w-full mt-6 bg-[#505081] text-[#0F0E47] font-bold py-3 rounded-lg opacity-50 cursor-not-allowed">
-                    Calculate Cantilever Design (Coming Soon)
-                </button>
-            </div>
-        </div>
-
-        <!-- History Tab Content -->
-        <div id="contentHistory" class="tab-content hidden">
-            <div class="grid md:grid-cols-3 gap-6">
-                <div class="md:col-span-2">
-                    <h2 class="text-xl font-semibold text-[#E0E0FF] mb-4 border-b border-[#505081] pb-2">Recent Design History</h2>
-                    <ul id="designHistoryList" class="space-y-3 p-2 bg-[#0F0E47] rounded-xl border border-[#505081]">
-                        <li class="p-3 text-[#8686AC]">History will load here in real-time...</li>
-                    </ul>
-                </div>
-                <div class="md:col-span-1 p-6 bg-[#1A1A47] rounded-xl shadow-inner border border-[#505081]">
-                     <h3 class="text-lg font-semibold text-[#E0E0FF] mb-3">About History</h3>
-                     <p class="text-sm text-[#8686AC]">This list automatically tracks and displays your last 5 design calculations, allowing you to quickly reload previous designs for modification or review. Data is stored in a public Firestore collection under your anonymous user ID.</p>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Custom Footer -->
-        <footer id="customFooter" class="mt-8 pt-4 border-t border-[#505081] text-center text-sm text-[#8686AC]">
-            <p class="font-semibold text-[#E0E0FF]">Developed by Arif Ahmad, Civil Engineer (2025)</p>
-            <p class="mt-1">Email: <a href="mailto:aarif907@gmail.com" class="text-[#505081] hover:text-[#8686AC]">aarif907@gmail.com</a></p>
-            <p class="text-xs mt-3 text-[#505081]">Disclaimer: All calculations are based on assumed values and simplified models for educational and preliminary purposes, intended to follow IS 456:2000 principles.</p>
+        </main>
+        <!-- Footer -->
+        <footer class="mt-10 pt-6 text-center text-gray-500 border-t border-[#3a3b4f] w-full max-w-4xl">
+            <p class="text-sm">Developed by Arif Ahmad, Civil Engineer (2025)</p>
+            <p class="text-xs mt-2">Disclaimer: All calculations are based on assumed values and simplified models for educational and preliminary purposes.</p>
         </footer>
-
     </div>
 
-    <!-- JavaScript Logic -->
     <script>
-        const RULIM_MAP = {
-            '250': 0.148,
-            '415': 0.138,
-            '500': 0.133
-        };
+        // Global variables for Chart.js instance and current view
+        let sfdBmdChart = null;
+        let currentDiagramType = 'BMD'; // Default to Bending Moment Diagram
 
-        const canvasContainer = document.getElementById('diagramCanvasContainer');
-        let scene, camera, renderer, axes, sfdCurve, bmdCurve, beamMesh;
-        let currentDiagram = 'BMD'; // Default diagram to show
-        let initialCalculationRun = false; 
-        let isRendererInitialized = false; 
-
-        /**
-         * Sets the current visible diagram (SFD or BMD) and updates the button style.
-         */
-        window.setCurrentDiagram = function(diagramType) {
-            currentDiagram = diagramType;
-
-            // Update button styles
-            const isBMD = diagramType === 'BMD';
-            const bmdBtn = document.getElementById('diagramToggleBMD');
-            const sfdBtn = document.getElementById('diagramToggleSFD');
-
-            bmdBtn.className = `px-6 py-2 rounded-full font-semibold transition shadow-lg ${isBMD ? 'bg-[#505081] text-[#0F0E47] hover:bg-[#8686AC]' : 'bg-[#0F0E47] text-[#8686AC] hover:bg-[#1A1A47] border border-[#505081]'}`;
-            sfdBtn.className = `px-6 py-2 rounded-full font-semibold transition shadow-lg ${!isBMD ? 'bg-[#505081] text-[#0F0E47] hover:bg-[#8686AC]' : 'bg-[#0F0E47] text-[#8686AC] hover:bg-[#1A1A47] border border-[#505081]'}`;
-
-            // Update visibility and force redraw
-            if (isRendererInitialized) {
-                if (sfdCurve) sfdCurve.visible = !isBMD;
-                if (bmdCurve) bmdCurve.visible = isBMD;
-                renderer.render(scene, camera);
-                // Update labels 
-                updateDiagramLabels(
-                    parseFloat(document.getElementById('spanInput').value) || 5,
-                    parseFloat(document.getElementById('muInput').value) || 75,
-                    parseFloat(document.getElementById('vuInput').value) || 50
-                );
-            }
+        // --- Core Application Logic ---
+        function initApp() {
+            // Ensure Chart.js is ready before drawing
+            setupChart();
+            // Attach event listeners to input fields
+            document.getElementById('spanLength').addEventListener('change', updateDiagram);
+            document.getElementById('udlValue').addEventListener('change', updateDiagram);
+            // Draw initial diagram
+            drawDiagram(currentDiagramType);
         }
 
-        window.runInitialCalculationIfReady = function() {
-            if (window.isAuthReady && isRendererInitialized && !initialCalculationRun) {
-                initialCalculationRun = true;
-                calculateDesign(); 
+        function navigate(viewId) {
+            document.querySelectorAll('.active-view').forEach(view => {
+                view.classList.replace('active-view', 'hidden');
+            });
+            const targetView = document.getElementById(viewId + '-view');
+            if (targetView) {
+                targetView.classList.replace('hidden', 'active-view');
             }
         }
-
-
-        function createMessage(message, type) {
-            let color, icon;
-            switch (type) {
-                case 'success':
-                    color = 'bg-green-800 border-green-500 text-green-200';
-                    icon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>`;
-                    break;
-                case 'error':
-                    color = 'bg-red-800 border-red-500 text-red-200';
-                    icon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>`;
-                    break;
-                case 'info':
-                default:
-                    color = 'bg-[#1A1A47] border-[#505081] text-[#8686AC]';
-                    icon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg>`;
-            }
-
-            return `
-                <div class="p-3 border-l-4 rounded-lg flex items-start ${color} message-box mt-3">
-                    ${icon}
-                    <p class="text-sm">${message}</p>
-                </div>
-            `;
-        }
-
-
-        /**
-         * Main function to perform the structural design check.
-         */
-        window.calculateDesign = function() {
-            const span = parseFloat(document.getElementById('spanInput').value); // L in m
-            const D = parseFloat(document.getElementById('dInput').value); // Overall Depth in mm
-            const b = parseFloat(document.getElementById('bInput').value); // Width in mm
-            const dPrime = parseFloat(document.getElementById('effectiveCoverInput').value); // Effective Cover in mm
-            const fck = parseFloat(document.getElementById('fckInput').value);
-            const fy = document.getElementById('fyInput').value;
-            const MuReq = parseFloat(document.getElementById('muInput').value); // Mu,req in kNm
-            const VuReq = parseFloat(document.getElementById('vuInput').value); // Vu,req in kN
-            const AstProv = parseFloat(document.getElementById('astInput').value); // Ast,prov in mm²
-
-            const messageBox = document.getElementById('messageBox');
-            messageBox.innerHTML = '';
+        
+        // --- Structural Calculation Functions ---
+        function calculateUDLValues(L, w) {
+            // Simply Supported Beam with UDL 'w' over span 'L'
+            const M_max = (w * L * L) / 8; // Bending Moment at center
+            const V_max = (w * L) / 2;     // Shear Force at support
             
-            // Input Validation
-            if (isNaN(span) || isNaN(D) || isNaN(b) || isNaN(dPrime) || isNaN(fck) || isNaN(MuReq) || isNaN(VuReq) || isNaN(AstProv)) {
-                messageBox.innerHTML = createMessage('Please ensure all input fields are filled with valid numbers.', 'error');
+            return { L, w, M_max: M_max.toFixed(2), V_max: V_max.toFixed(2) };
+        }
+
+        // --- Chart/Diagram Logic ---
+
+        function setupChart() {
+            const ctx = document.getElementById('diagramCanvas').getContext('2d');
+            
+            // Destroy existing chart instance if it exists
+            if (sfdBmdChart) {
+                sfdBmdChart.destroy();
+            }
+
+            sfdBmdChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [0, 1, 2, 3, 4, 5], // Example labels, will be overwritten
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 500
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: (items) => `Position: ${items[0].label} m`,
+                                label: (item) => `${item.dataset.label}: ${item.formattedValue} kN${currentDiagramType === 'BMD' ? '.m' : ''}`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            title: {
+                                display: true,
+                                text: 'Distance (m)',
+                                color: '#9ca3af'
+                            },
+                            grid: {
+                                color: '#4b5563'
+                            },
+                            ticks: {
+                                color: '#e5e7eb'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: currentDiagramType === 'BMD' ? 'Bending Moment (kN.m)' : 'Shear Force (kN)',
+                                color: '#9ca3af'
+                            },
+                            grid: {
+                                color: '#4b5563'
+                            },
+                            ticks: {
+                                color: '#e5e7eb'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function generateSFDData(L, w) {
+            const numPoints = 51; // Number of points for smooth curve
+            const labels = [];
+            const data = [];
+
+            // SF(x) = wL/2 - w*x 
+            for (let i = 0; i < numPoints; i++) {
+                const x = (i / (numPoints - 1)) * L;
+                const V_x = (w * L / 2) - (w * x);
+
+                labels.push(x.toFixed(2));
+                data.push(V_x.toFixed(2));
+            }
+
+            return { labels, data };
+        }
+
+        function generateBMDData(L, w) {
+            const numPoints = 51; // Number of points for smooth curve
+            const labels = [];
+            const data = [];
+
+            // BM(x) = (wL/2)*x - (w*x^2)/2
+            for (let i = 0; i < numPoints; i++) {
+                const x = (i / (numPoints - 1)) * L;
+                const M_x = (w * L * x / 2) - (w * x * x / 2);
+                
+                labels.push(x.toFixed(2));
+                data.push(M_x.toFixed(2));
+            }
+
+            return { labels, data };
+        }
+
+        function updateDiagram() {
+            // Trigger drawing based on the currently selected diagram type
+            drawDiagram(currentDiagramType);
+        }
+
+        function drawDiagram(type) {
+            currentDiagramType = type;
+            const L = parseFloat(document.getElementById('spanLength').value) || 1;
+            const w = parseFloat(document.getElementById('udlValue').value) || 0.1;
+            
+            if (L <= 0 || w <= 0) {
+                document.getElementById('diagram-output').innerHTML = '<span class="text-red-500">Please enter positive values for L and w.</span>';
+                if(sfdBmdChart) sfdBmdChart.data.datasets = [];
+                sfdBmdChart.update();
                 return;
             }
 
-            const d = D - dPrime; // Effective Depth (d) in mm
+            const calcs = calculateUDLValues(L, w);
+            let dataObject;
+            let title;
+            let lineColor;
+            let backgroundColor;
 
-            if (d <= 0 || d <= dPrime) {
-                messageBox.innerHTML = createMessage('Effective depth (d) is zero or negative. Ensure overall depth (D) is greater than effective cover (d\').', 'error');
-                return;
-            }
-            
-            // --- Flexural Strength (Mu,lim) Calculation ---
-            const RuLim = RULIM_MAP[fy];
-            const MuLim_N_mm = RuLim * fck * b * d * d;
-            const MuLim_kNm = MuLim_N_mm / (10**6); // Convert N-mm to kNm
-
-            // --- Required Steel Area (Ast,req) Calculation ---
-            const term = (4.6 * MuReq * 10**6) / (fck * b * d * d);
-            let AstReq = NaN;
-            let isSafe = false;
-
-            if (MuLim_kNm >= MuReq) {
-                isSafe = true;
-                if (term < 1 && term >= 0) {
-                     AstReq = (0.5 * fck / fy) * b * d * (1 - Math.sqrt(1 - term));
-                } else {
-                     AstReq = 0; 
-                }
-            }
-            
-            // --- Safety Check (Flexure) ---
-            const flexureStatus = isSafe ? 'Safe' : 'Unsafe (Flexure)';
-            
-            // --- Output Display Updates ---
-            document.getElementById('effectiveDepthOutput').textContent = `${d.toFixed(1)} mm`;
-            document.getElementById('RuLimOutput').textContent = `${RuLim.toFixed(3)}`;
-            document.getElementById('MuLimOutput').textContent = `${MuLim_kNm.toFixed(2)} kNm`;
-            document.getElementById('AstRequiredOutput').textContent = isSafe && !isNaN(AstReq) ? 
-                `${AstReq.toFixed(2)} mm²` : 
-                `Requires Doubly Reinforced Section`;
-
-            const flexureResultDiv = document.getElementById('flexureResult');
-            flexureResultDiv.classList.remove('safe', 'unsafe');
-            flexureResultDiv.classList.add(isSafe ? 'safe' : 'unsafe');
-
-
-            // --- Final Status Summary Update ---
-            const statusSummary = document.getElementById('statusSummary');
-            const statusTitle = document.getElementById('statusTitle');
-            const statusMessage = document.getElementById('statusMessage');
-            const statusComparison = document.getElementById('statusComparison');
-
-            statusSummary.classList.remove('safe', 'unsafe', 'border-2', 'border-dashed');
-            statusSummary.classList.add(isSafe ? 'safe' : 'unsafe');
-
-            statusTitle.textContent = isSafe ? 'DESIGN IS SAFE' : 'DESIGN IS UNSAFE';
-            statusMessage.textContent = isSafe ? 
-                'The beam has adequate Flexural Capacity (M_u, lim >= M_u, req).' : 
-                'Flexural Capacity is INSUFFICIENT! (M_u, lim < M_u, req).';
-            
-            statusComparison.textContent = isSafe ?
-                `Required ${MuReq.toFixed(2)} kNm vs. Capacity ${MuLim_kNm.toFixed(2)} kNm` :
-                `Required ${MuReq.toFixed(2)} kNm > Capacity ${MuLim_kNm.toFixed(2)} kNm`;
-
-            if (messageBox.innerHTML === '') {
-                 messageBox.innerHTML = createMessage(`Flexural check completed. Status: ${flexureStatus}.`, isSafe ? 'success' : 'error');
-            }
-
-            
-            // --- Save to Firestore ---
-            const designData = {
-                span: span.toFixed(2),
-                depth: D.toFixed(0),
-                width: b.toFixed(0),
-                fck: fck.toFixed(0),
-                fy: fy,
-                momentRequired: MuReq.toFixed(2),
-                shearRequired: VuReq.toFixed(2),
-                astProvided: AstProv.toFixed(2),
-                muLim: MuLim_kNm.toFixed(2),
-                astRequired: isSafe ? AstReq.toFixed(2) : 'DOUBLY REINFORCED',
-                status: flexureStatus
-            };
-            window.saveDesignToFirestore(designData);
-
-            // --- Update Diagrams ---
-            drawDiagrams(span, MuReq, VuReq);
-            updateDiagramLabels(span, MuReq, VuReq);
-        }
-
-        // --- Three.js Diagram Logic ---
-
-        function initCanvas() {
-            // Scene setup
-            scene = new THREE.Scene();
-            
-            const width = canvasContainer.clientWidth;
-            const height = canvasContainer.clientHeight;
-            
-            // Camera (Orthographic for 2D diagrams)
-            camera = new THREE.OrthographicCamera(width / - 2, width / 2, height / 2, height / - 2, 1, 1000);
-            camera.position.z = 5; 
-
-            // Renderer
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(width, height);
-            // Append the renderer canvas directly to the container, not the overlay
-            canvasContainer.appendChild(renderer.domElement);
-            isRendererInitialized = true;
-
-            // Light
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-            scene.add(ambientLight);
-
-            window.addEventListener('resize', onWindowResize, false);
-
-            addBeamOutline(width, height);
-            
-            renderer.render(scene, camera);
-            
-            window.runInitialCalculationIfReady(); 
-            setCurrentDiagram('BMD'); // Initialize toggle state
-        }
-
-        function onWindowResize() {
-            if (!isRendererInitialized) return;
-
-            const width = canvasContainer.clientWidth;
-            const height = canvasContainer.clientHeight;
-
-            camera.left = width / - 2;
-            camera.right = width / 2;
-            camera.top = height / 2;
-            camera.bottom = height / - 2;
-            camera.updateProjectionMatrix();
-
-            renderer.setSize(width, height);
-            
-            addBeamOutline(width, height);
-            const span = parseFloat(document.getElementById('spanInput').value) || 5;
-            const MuReq = parseFloat(document.getElementById('muInput').value) || 75;
-            const VuReq = parseFloat(document.getElementById('vuInput').value) || 50;
-            drawDiagrams(span, MuReq, VuReq);
-            updateDiagramLabels(span, MuReq, VuReq);
-            renderer.render(scene, camera);
-        }
-
-        function addBeamOutline(width, height) {
-            scene.children = scene.children.filter(obj => obj.name !== 'BeamOutline' && obj.name !== 'Axes' && obj.name !== 'SupportLeft' && obj.name !== 'SupportRight');
-
-            const beamLength = width * 0.8; 
-            const beamHeight = 20; 
-            const yOffset = -50; 
-
-            // 1. Beam Line (Box representing beam section)
-            const beamGeometry = new THREE.BoxGeometry(beamLength, beamHeight, 1);
-            const beamMaterial = new THREE.MeshBasicMaterial({ color: 0x505081, transparent: true, opacity: 0.5 });
-            beamMesh = new THREE.Mesh(beamGeometry, beamMaterial);
-            beamMesh.position.y = yOffset;
-            beamMesh.name = 'BeamOutline';
-            scene.add(beamMesh);
-
-            // 2. Axes (Reference Line)
-            const axesGeometry = new THREE.BufferGeometry().setFromPoints([
-                new THREE.Vector3(-beamLength / 2, yOffset, 1),
-                new THREE.Vector3(beamLength / 2, yOffset, 1)
-            ]);
-            axes = new THREE.Line(axesGeometry, new THREE.LineBasicMaterial({ color: 0x8686AC })); 
-            axes.name = 'Axes';
-            scene.add(axes);
-
-            // 3. Supports (Triangles)
-            const supportGeometry = new THREE.ShapeGeometry(new THREE.Shape([
-                new THREE.Vector2(-15, 0),
-                new THREE.Vector2(15, 0),
-                new THREE.Vector2(0, -20)
-            ]));
-            const supportMaterial = new THREE.MeshBasicMaterial({ color: 0x8686AC });
-
-            const supportLeft = new THREE.Mesh(supportGeometry, supportMaterial);
-            supportLeft.position.set(-beamLength / 2, yOffset - beamHeight / 2 - 2, 1);
-            supportLeft.name = 'SupportLeft';
-            scene.add(supportLeft);
-
-            const supportRight = new THREE.Mesh(supportGeometry, supportMaterial);
-            supportRight.position.set(beamLength / 2, yOffset - beamHeight / 2 - 2, 1);
-            supportRight.name = 'SupportRight';
-            scene.add(supportRight);
-
-            renderer.render(scene, camera);
-        }
-
-        function updateDiagramLabels(span, MuReq, VuReq) {
-            if (typeof katex === 'undefined') return;
-
-            const VmaxLabel = VuReq.toFixed(2);
-            const MmaxLabel = MuReq.toFixed(2);
-
-            // Get the element and update its LaTeX content and text
-            const updateLabel = (id, value) => {
-                const el = document.getElementById(id);
-                const latexTemplate = el.getAttribute('data-latex');
+            // --- SFD (Linear Function) ---
+            if (type === 'SFD') {
+                dataObject = generateSFDData(L, w);
+                title = `Max Shear Force (Vₘₐₓ): ${calcs.V_max} kN`;
+                lineColor = '#4f46e5'; // Indigo
+                backgroundColor = 'rgba(79, 70, 229, 0.3)';
                 
-                if (!latexTemplate) return;
+            // --- BMD (Parabolic Function) ---
+            } else { // 'BMD'
+                dataObject = generateBMDData(L, w);
+                title = `Max Bending Moment (Mₘₐₓ): ${calcs.M_max} kN.m`;
+                lineColor = '#9333ea'; // Purple
+                backgroundColor = 'rgba(147, 51, 234, 0.3)';
+            }
+            
+            // Update output display
+            document.getElementById('diagram-output').textContent = title;
 
-                // Replace the {{VALUE}} placeholder with the actual value
-                const newLatex = latexTemplate.replace(/\{\{VALUE\}\}/g, value);
-                let colorHex = '#8686AC'; // Default color
-                if (id === 'labelMmax') colorHex = '#F87171'; // Red for BMD
-                if (id === 'labelVmaxLeft' || id === 'labelVmaxRight') colorHex = '#8686AC'; // Secondary Accent for SFD
-
-
-                try {
-                    const coloredLatex = `\\color{${colorHex}}{${newLatex}}`;
-                    katex.render(coloredLatex, el, {
-                        throwOnError: false,
-                        displayMode: false 
-                    });
-                } catch(e) {
-                    console.error(`Error rendering KaTeX for ${id}:`, e);
+            // Prepare chart data structure
+            const newDatasets = [{
+                label: type,
+                data: dataObject.data.map((val, index) => ({ x: parseFloat(dataObject.labels[index]), y: parseFloat(val) })),
+                borderColor: lineColor,
+                backgroundColor: backgroundColor,
+                borderWidth: 2,
+                fill: true,
+                pointRadius: 0,
+                tension: type === 'BMD' ? 0.3 : 0, // Parabola for BMD, straight lines for SFD
+                stepped: type === 'SFD' ? 'before' : false, // Shear is technically piecewise, but linear is close enough for UDL. Use tension 0 for straight line.
+                segment: {
+                    borderColor: ctx => type === 'SFD' ? lineColor : undefined,
                 }
-                
-                // Set visibility based on current diagram
-                if (id === 'labelMmax') {
-                    el.style.display = currentDiagram === 'BMD' ? 'block' : 'none';
-                } else if (id === 'labelVmaxLeft' || id === 'labelVmaxRight') {
-                    el.style.display = currentDiagram === 'SFD' ? 'block' : 'none';
-                } else if (id === 'labelSpan') {
-                    // Span label is plain text (not rendered with KaTeX)
-                    el.textContent = `Span (L) = ${span.toFixed(2)} m`; 
-                    el.style.display = 'block';
-                }
-            };
-
-            updateLabel('labelVmaxLeft', VmaxLabel);
-            updateLabel('labelVmaxRight', VmaxLabel);
-            updateLabel('labelMmax', MmaxLabel);
-
-            // Span label is plain text
-            document.getElementById('labelSpan').textContent = `Span (L) = ${span.toFixed(2)} m`;
+            }];
+            
+            // Reinitialize chart with new scales
+            setupChart(); 
+            
+            // Set new data
+            sfdBmdChart.data.labels = dataObject.labels;
+            sfdBmdChart.data.datasets = newDatasets;
+            
+            // Manually set X-axis scale min/max to L
+            sfdBmdChart.options.scales.x.min = 0;
+            sfdBmdChart.options.scales.x.max = L;
+            
+            // Set Y-axis title based on type
+            sfdBmdChart.options.scales.y.title.text = type === 'BMD' ? 'Bending Moment (kN.m)' : 'Shear Force (kN)';
+            
+            // Update the chart
+            sfdBmdChart.update('none'); // 'none' prevents animation which is good for quick redraws
         }
-
-
-        function drawDiagrams(span, MuReq, VuReq) {
-            if (!scene || !isRendererInitialized) {
-                return; 
-            }
-            
-            // Clear existing curves
-            scene.children = scene.children.filter(obj => obj.name !== 'SFDCurve' && obj.name !== 'BMDCurve');
-
-            const width = canvasContainer.clientWidth;
-            const beamLength = width * 0.8;
-            const diagramHeight = 150; // Max height for the diagrams
-            const yOffset = -50; // Y position of the beam (zero axis)
-            
-            // Ensure inputs are positive for scaling
-            const VuMax = Math.max(VuReq, 10); // Min 10 kN for visual stability
-            const MuMax = Math.max(MuReq, 10); // Min 10 kNm for visual stability
-
-            // Use a higher scale factor for better visual impact
-            const diagramScaleFactor = 0.7; 
-
-            // SFD (Linear from +VuMax to -VuMax)
-            const sfdPoints = [];
-            const sfdScaleFactor = (diagramHeight * diagramScaleFactor) / VuMax;
-            
-            sfdPoints.push(new THREE.Vector3(-beamLength / 2, yOffset + VuMax * sfdScaleFactor, 2)); 
-            sfdPoints.push(new THREE.Vector3(-beamLength / 2 + 1, yOffset + VuMax * sfdScaleFactor, 2)); // Start flat
-            sfdPoints.push(new THREE.Vector3(beamLength / 2 - 1, yOffset - VuMax * sfdScaleFactor, 2)); // End flat
-            sfdPoints.push(new THREE.Vector3(beamLength / 2, yOffset - VuMax * sfdScaleFactor, 2)); 
-
-            const sfdGeometry = new THREE.BufferGeometry().setFromPoints(sfdPoints);
-            sfdCurve = new THREE.Line(sfdGeometry, new THREE.LineBasicMaterial({ color: 0x8686AC, linewidth: 3 })); // Secondary Accent Color
-            sfdCurve.name = 'SFDCurve';
-            scene.add(sfdCurve);
-            sfdCurve.visible = (currentDiagram === 'SFD');
-
-
-            // BMD (Parabolic, Max MuMax at center, below axis for positive moment SS beam)
-            const bmdPoints = [];
-            const numSegments = 50;
-            const bmdScaleFactor = (diagramHeight * diagramScaleFactor) / MuMax;
-
-            for (let i = 0; i <= numSegments; i++) {
-                const xNorm = i / numSegments; 
-                const xCoord = -beamLength / 2 + xNorm * beamLength;
-
-                // Parabolic function: max value is 1 at x_norm=0.5.
-                const yNorm = xNorm * (1 - xNorm) * 4;
-
-                // Position below the axis (yOffset - scaled yNorm)
-                const yCoord = yOffset - (yNorm * MuMax * bmdScaleFactor);
-                
-                bmdPoints.push(new THREE.Vector3(xCoord, yCoord, 2));
-            }
-
-            const bmdGeometry = new THREE.BufferGeometry().setFromPoints(bmdPoints);
-            bmdCurve = new THREE.Line(bmdGeometry, new THREE.LineBasicMaterial({ color: 0xF87171, linewidth: 3 })); // Red (Tailwind's red-400 for contrast)
-            bmdCurve.name = 'BMDCurve';
-            scene.add(bmdCurve);
-            bmdCurve.visible = (currentDiagram === 'BMD');
-
-            // Final visibility set based on current state
-            sfdCurve.visible = (currentDiagram === 'SFD');
-            bmdCurve.visible = (currentDiagram === 'BMD');
-            
-            renderer.render(scene, camera);
-        }
-
-        // --- Tab Switching Logic ---
-        function switchTab(tabId) {
-            // Hide all tab content
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            // Deactivate all buttons
-            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
-
-            // Show the selected tab content
-            const contentId = `content${tabId.charAt(0).toUpperCase() + tabId.slice(1)}`;
-            document.getElementById(contentId).classList.remove('hidden');
-            // Activate the selected button
-            document.getElementById(`tab${tabId.charAt(0).toUpperCase() + tabId.slice(1)}`).classList.add('active');
-
-            // Specific actions for the Diagrams tab
-            if (tabId === 'diagrams') {
-                onWindowResize(); // Force resize to ensure canvas fits container and redraws
-                setCurrentDiagram(currentDiagram); // Ensure correct diagram is visible and labels update
-            }
-        }
-
-        // --- Initial Load Event Listeners ---
-        window.addEventListener('load', () => {
-            document.getElementById('designForm').addEventListener('change', window.calculateDesign);
-            document.getElementById('designForm').addEventListener('input', window.calculateDesign);
-        });
 
     </script>
 </body>
