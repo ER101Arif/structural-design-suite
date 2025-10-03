@@ -1,740 +1,1033 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Integrated Structural Design Suite (IS 456 & IS 800 & Estimation)</title><script src="https://www.google.com/search?q=https://cdn.tailwindcss.com"></script><style>@import url('https://www.google.com/search?q=https://fonts.googleapis.com/css2%3Ffamily%3DInter:wght%40400%3B500%3B600%3B700%26display%3Dswap');body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #334155; }.card { background-color: white; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }.compliance-pass { background-color: #d1fae5; color: #065f46; }.compliance-fail { background-color: #fee2e2; color: #991b1b; }.result-box { padding: 1rem; border-radius: 0.5rem; text-align: center; }.tab-btn { padding: 0.75rem 1.5rem; cursor: pointer; border-radius: 0.5rem 0.5rem 0 0; font-weight: 600; transition: background-color 0.3s; }.tab-active { background-color: white; color: #4f46e5; border-bottom: 2px solid #4f46e5; }.tab-inactive { background-color: #e2e8f0; color: #475569; }canvas { border: 1px solid #ccc; background-color: #ffffff; margin: 0 auto; display: block; border-radius: 0.5rem; }</style></head><body class="p-4 sm:p-6 md:p-8"><main class="max-w-7xl mx-auto"><header class="text-center mb-10"><h1 class="text-3xl sm:text-4xl font-bold text-slate-800">Integrated Structural Engineering Suite</h1><p class="mt-2 text-lg text-slate-600">Design Checks (IS 456 & 800) & Material Estimation</p></header>    <!-- Tabs Navigation -->
-    <div class="flex border-b border-gray-200 mb-6 overflow-x-auto">
-        <button class="tab-btn tab-active" onclick="switchTab('rcc-tab-content', 'runRCCDesign')">RCC Beam Design (IS 456)</button>
-        <button class="tab-btn tab-inactive" onclick="switchTab('steel-tab-content', 'runSteelDesign')">Steel Beam Check (IS 800)</button>
-        <button class="tab-btn tab-inactive" onclick="switchTab('estimation-tab-content', 'runEstimation')">Material Estimation (IS 456)</button>
-    </div>
-
-    <!-- Design Content -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        
-        <!-- Left Column: Unified Inputs for Active Tab -->
-        <div class="lg:col-span-1 space-y-6">
-            
-            <!-- RCC Inputs (IS 456) -->
-            <div id="rcc-inputs" class="card p-6">
-                <h2 class="text-xl font-bold text-slate-700 mb-4 border-b pb-2">1. IS 456 Inputs (RCC)</h2>
-                <form id="rcc-form" class="space-y-4">
-                    <h3 class="font-semibold text-slate-600 mb-2 mt-4">Geometry & Materials</h3>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div><label class="block text-sm">Width (b, mm)</label><input type="number" id="rcc-b" value="300" class="w-full p-2 border rounded-md" placeholder="mm"></div>
-                        <div><label class="block text-sm">Depth (D, mm)</label><input type="number" id="rcc-D" value="600" class="w-full p-2 border rounded-md" placeholder="mm"></div>
-                        <div><label class="block text-sm">Cover (mm)</label><input type="number" id="rcc-cover" value="50" class="w-full p-2 border rounded-md" placeholder="mm"></div>
-                        <div><label class="block text-sm">Bar Dia. (&#x3c6;)</label><select id="rcc-barDia" class="w-full p-2 border rounded-md"><option value="16" selected>16 mm</option><option value="20">20 mm</option></select></div>
-                        <div><label class="block text-sm">Concrete (f<sub>ck</sub>)</label><select id="rcc-fck" class="w-full p-2 border rounded-md"><option value="25" selected>M25</option><option value="30">M30</option></select></div>
-                        <div><label class="block text-sm">Steel (f<sub>y</sub>)</label><select id="rcc-fy" class="w-full p-2 border rounded-md"><option value="415" selected>Fe 415</option><option value="500">Fe 500</option></select></div>
-                    </div>
-                    <h3 class="font-semibold text-slate-600 mb-2 mt-4 border-t pt-4">Loads & Support Conditions</h3>
-                    <div>
-                        <label class="block text-sm">Support Condition</label>
-                        <select id="rcc-support" class="w-full p-2 border rounded-md">
-                            <option value="simply_supported">Simply Supported (UDL)</option>
-                            <option value="cantilever">Cantilever (UDL)</option>
-                        </select>
-                    </div>
-                    <div><label class="block text-sm">Span (L, m)</label><input type="number" id="rcc-L" value="5" class="w-full p-2 border rounded-md"></div>
-                    <div><label class="block text-sm">Service UDL (w, kN/m)</label><input type="number" id="rcc-w" value="30" class="w-full p-2 border rounded-md"></div>
-                    <button type="button" onclick="runRCCDesign()" class="w-full bg-indigo-600 text-white font-bold py-2 rounded-lg hover:bg-indigo-700 transition duration-300 mt-4">
-                        Run RCC Design
-                    </button>
-                </form>
-            </div>
-
-            <!-- Steel Inputs (IS 800) -->
-            <div id="steel-inputs" class="card p-6 hidden">
-                <h2 class="text-xl font-bold text-slate-700 mb-4 border-b pb-2">1. IS 800 Inputs (Steel)</h2>
-                <form id="steel-form" class="space-y-4">
-                    <h3 class="font-semibold text-slate-600 mb-2 mt-4">Loads & Support Conditions</h3>
-                    <div>
-                        <label class="block text-sm">Support Condition</label>
-                        <select id="steel-support" class="w-full p-2 border rounded-md">
-                            <option value="simply_supported">Simply Supported (UDL)</option>
-                            <option value="cantilever">Cantilever (UDL)</option>
-                        </select>
-                    </div>
-                    <div><label class="block text-sm">Span (L, m)</label><input type="number" id="steel-L" value="6.0" class="w-full p-2 border rounded-md"></div>
-                    <div><label class="block text-sm">Service UDL (w, kN/m)</label><input type="number" id="steel-w" value="15" class="w-full p-2 border rounded-md"></div>
-                    <h3 class="font-semibold text-slate-600 mb-2 mt-4 border-t pt-4">Section & Material Properties</h3>
-                    <div><label class="block text-sm">Yield Strength (f<sub>y</sub>, MPa)</label><select id="steel-fy" class="w-full p-2 border rounded-md"><option value="250" selected>Fe 250</option><option value="350">Fe 350</option></select></div>
-                    <div><label class="block text-sm">Plastic Modulus (Z<sub>p</sub>, cm³)</label><input type="number" id="steel-Zp" value="1200" class="w-full p-2 border rounded-md"></div>
-                    <div><label class="block text-sm">Web Depth (h, mm)</label><input type="number" id="steel-h" value="300" class="w-full p-2 border rounded-md"></div>
-                    <div><label class="block text-sm">Web Thickness (t<sub>w</sub>, mm)</label><input type="number" id="steel-tw" value="8.0" step="0.5" class="w-full p-2 border rounded-md"></div>
-                    <div><label class="block text-sm">Classification (&beta;<sub>b</sub>)</label><select id="steel-beta_b" class="w-full p-2 border rounded-md"><option value="1.0" selected>Compact (1.0)</option><option value="0.7">Semi-Compact (0.7)</option></select></div>
-                    <button type="button" onclick="runSteelDesign()" class="w-full bg-teal-600 text-white font-bold py-2 rounded-lg hover:bg-teal-700 transition duration-300 mt-4">
-                        Run Steel Check
-                    </button>
-                </form>
-            </div>
-            
-            <!-- Estimation Inputs (IS 456) -->
-            <div id="estimation-inputs" class="card p-6 hidden">
-                <h2 class="text-xl font-bold text-slate-700 mb-4 border-b pb-2">1. Estimation Inputs (IS 456)</h2>
-                <form id="estimation-form" class="space-y-4">
-                    <div>
-                        <label class="block text-sm">Element Type</label>
-                        <select id="est-element" class="w-full p-2 border rounded-md">
-                            <option value="beam">Beam</option>
-                            <option value="slab">Slab</option>
-                            <option value="column">Column</option>
-                            <option value="foundation">Foundation</option>
-                        </select>
-                    </div>
-                    <h3 class="font-semibold text-slate-600 mb-2 mt-4">Geometry (in meters)</h3>
-                    <div class="grid grid-cols-3 gap-3">
-                        <div><label class="block text-sm">Length (L)</label><input type="number" id="est-L" value="5.0" step="0.1" class="w-full p-2 border rounded-md" placeholder="m"></div>
-                        <div><label class="block text-sm">Width (B)</label><input type="number" id="est-B" value="0.3" step="0.01" class="w-full p-2 border rounded-md" placeholder="m"></div>
-                        <div><label class="block text-sm">Depth (D)</label><input type="number" id="est-D" value="0.6" step="0.01" class="w-full p-2 border rounded-md" placeholder="m"></div>
-                    </div>
-                    <h3 class="font-semibold text-slate-600 mb-2 mt-4 border-t pt-4">Concrete & Steel Details</h3>
-                    <div>
-                        <label class="block text-sm">Concrete Grade (Mix Ratio)</label>
-                        <select id="est-grade" class="w-full p-2 border rounded-md">
-                            <option value="M25" selected>M25 (1:1:2 Nominal Mix)</option>
-                            <option value="M20">M20 (1:1.5:3 Nominal Mix)</option>
-                            <option value="M15">M15 (1:2:4 Nominal Mix)</option>
-                            <option value="M10">M10 (1:3:6 Nominal Mix)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm">Steel Reinforcement (%)</label>
-                        <input type="number" id="est-steel-percent" value="1.5" step="0.1" min="0.5" max="4.0" class="w-full p-2 border rounded-md" placeholder="e.g., 1.5%">
-                        <p class="text-xs text-slate-500 mt-1">Typical range for beams: 1.0% - 2.0%</p>
-                    </div>
-                    <button type="button" onclick="runEstimation()" class="w-full bg-orange-600 text-white font-bold py-2 rounded-lg hover:bg-orange-700 transition duration-300 mt-4">
-                        Calculate Materials
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Right Column: Tabbed Results -->
-        <div class="lg:col-span-2 space-y-8">
-            
-            <!-- RCC Results (IS 456) -->
-            <div id="rcc-tab-content" class="tab-content">
-                <div class="card p-6">
-                    <h2 class="text-xl font-bold text-slate-700 mb-4 border-b pb-2">Analysis Visualization (Service Load)</h2>
-                    <canvas id="rcc-diagram-canvas" width="600" height="300" class="w-full max-w-full"></canvas>
-                    <p class="text-sm text-slate-500 mt-2 text-center">Shear Force Diagram (SFD) is above the beam, Bending Moment Diagram (BMD) is below.</p>
-                </div>
-
-                <div class="card p-6 mt-6">
-                    <h2 class="text-xl font-bold text-slate-700 mb-4 border-b pb-2">RCC Design Results (IS 456: M<sub>u</sub> Check & A<sub>st</sub> Calculation)</h2>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                        <div class="bg-gray-100 p-4 rounded-lg"><p class="text-sm text-slate-500">Max Service Moment (M<sub>service</sub>)</p><p id="rcc-Mservice" class="text-2xl font-bold text-slate-800">- kNm</p></div>
-                        <div class="bg-violet-100 p-4 rounded-lg"><p class="text-sm text-slate-500">Factored Design Moment (M<sub>u</sub>)</p><p id="rcc-Mu" class="text-3xl font-bold text-violet-700">- kNm</p></div>
-                        <div class="bg-teal-50 p-4 rounded-lg"><p class="text-sm text-slate-500">Limiting Moment (M<sub>u, lim</sub>)</p><p id="rcc-Mulim" class="text-2xl font-bold text-teal-700">- kNm</p></div>
-                    </div>
-                    
-                    <div id="rcc-design-status" class="result-box mt-4 font-semibold text-lg flex items-center justify-center">
-                        Run design to check section adequacy.
-                    </div>
-                </div>
-
-                <div class="card p-6 mt-6">
-                    <h2 class="text-xl font-bold text-slate-700 mb-4 border-b pb-2">Reinforcement Schedule & Compliance</h2>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div class="bg-slate-50 p-4 rounded-lg text-center"><p class="text-sm text-slate-500">Required Steel (A<sub>st, reqd</sub>)</p><p id="rcc-Ast-req" class="text-2xl font-bold text-slate-800">- mm²</p></div>
-                        <div class="bg-green-100 p-4 rounded-lg text-center"><p class="text-sm text-slate-500">Provided Steel (A<sub>st, prov</sub>)</p><p id="rcc-Ast-prov" class="text-2xl font-bold text-green-700">- mm²</p></div>
-                        <div class="bg-violet-100 p-4 rounded-lg text-center"><p class="text-sm text-slate-500">Bars Provided (Dia. <span id="rcc-barDia-out">16</span>mm)</p><p id="rcc-Num-bars" class="text-3xl font-bold text-violet-700">- nos.</p></div>
-                    </div>
-                    <div class="mt-4 pt-4 border-t">
-                        <h3 class="font-semibold text-slate-700 mb-2">IS 456 Limits Check (Cl. 26.5.1)</h3>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div id="rcc-min-check-status" class="result-box bg-gray-50 text-left text-sm">Min Steel (A<sub>st, min</sub>): - mm²</div>
-                            <div id="rcc-max-check-status" class="result-box bg-gray-50 text-left text-sm">Max Steel (A<sub>st, max</sub>): - mm²</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Steel Results (IS 800) -->
-            <div id="steel-tab-content" class="tab-content hidden">
-                
-                 <div class="card p-6">
-                    <h2 class="text-xl font-bold text-slate-700 mb-4 border-b pb-2">Analysis Visualization (Service Load)</h2>
-                    <canvas id="steel-diagram-canvas" width="600" height="300" class="w-full max-w-full"></canvas>
-                    <p class="text-sm text-slate-500 mt-2 text-center">Shear Force Diagram (SFD) is above the beam, Bending Moment Diagram (BMD) is below.</p>
-                </div>
-
-                <div class="card p-6 mt-6">
-                    <h2 class="text-xl font-bold text-slate-700 mb-4 border-b pb-2">Steel Analysis Results (Ultimate Limit State)</h2>
-                    <p class="text-sm text-slate-600 mb-4">Loads factored by 1.5 for ultimate limit state design.</p>
-                    
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                        <div class="bg-violet-100 p-4 rounded-lg"><p class="text-sm text-slate-500">Ultimate UDL (w<sub>u</sub>)</p><p id="steel-wu" class="text-2xl font-bold text-violet-700">- kN/m</p></div>
-                        <div class="bg-gray-100 p-4 rounded-lg"><p class="text-sm text-slate-500">Max Ultimate Moment (M<sub>u</sub>)</p><p id="steel-Mu" class="text-2xl font-bold text-slate-800">- kNm</p></div>
-                        <div class="bg-gray-100 p-4 rounded-lg"><p class="text-sm text-slate-500">Max Ultimate Shear (V<sub>u</sub>)</p><p id="steel-Vu" class="text-2xl font-bold text-slate-800">- kN</p></div>
-                    </div>
-                </div>
-
-                <div class="card p-6 mt-6">
-                    <h2 class="text-xl font-bold text-slate-700 mb-4 border-b pb-2">Section Capacity Check (IS 800: Cl. 8 & 6)</h2>
-                    
-                    <!-- Moment Capacity Check -->
-                    <div class="border p-4 rounded-lg mb-4">
-                        <h3 class="font-semibold text-lg mb-2">1. Moment Capacity (M<sub>d</sub>)</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div class="result-box bg-teal-50"><p class="text-sm text-slate-500">Design Moment (M<sub>d</sub>)</p><p id="steel-Md" class="text-xl font-bold text-teal-700">- kNm</p></div>
-                            <div class="result-box bg-gray-50 col-span-2" id="steel-moment-check-status"><p class="font-bold text-lg">-</p></div>
-                        </div>
-                    </div>
-
-                    <!-- Shear Capacity Check -->
-                    <div class="border p-4 rounded-lg">
-                        <h3 class="font-semibold text-lg mb-2">2. Shear Capacity (V<sub>d</sub>)</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div class="result-box bg-teal-50"><p class="text-sm text-slate-500">Design Shear (V<sub>d</sub>)</p><p id="steel-Vd" class="text-xl font-bold text-teal-700">- kN</p></div>
-                            <div class="result-box bg-gray-50 col-span-2" id="steel-shear-check-status"><p class="font-bold text-lg">-</p></div>
-                        </div>
-                    </div>
-
-                    <!-- Final Summary -->
-                    <div class="mt-6 pt-4 border-t-2">
-                         <h3 class="font-semibold text-xl mb-2 text-center text-slate-700">Overall Section Suitability</h3>
-                        <div class="result-box" id="steel-final-summary">
-                            <p class="font-bold text-2xl">-</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Estimation Results -->
-            <div id="estimation-tab-content" class="tab-content hidden">
-                <div class="card p-6">
-                    <h2 class="text-xl font-bold text-slate-700 mb-4 border-b pb-2">Material Estimation Summary (IS 456 Basis)</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
-                        <div class="bg-slate-100 p-4 rounded-lg col-span-full">
-                            <p class="text-sm text-slate-500">Total Wet Concrete Volume</p>
-                            <p id="est-Vwet" class="text-3xl font-bold text-slate-800">0.00 m³</p>
-                        </div>
-                        <!-- Cement -->
-                        <div class="bg-red-50 p-4 rounded-lg">
-                            <p class="text-sm text-slate-500">Cement Required</p>
-                            <p id="est-cement-bags" class="text-2xl font-bold text-red-700">0.0 bags</p>
-                            <p id="est-cement-mass" class="text-sm text-slate-600 mt-1">(0.00 kg)</p>
-                        </div>
-                        <!-- Sand -->
-                        <div class="bg-yellow-50 p-4 rounded-lg">
-                            <p class="text-sm text-slate-500">Sand Required (Fine Aggregate)</p>
-                            <p id="est-sand" class="text-2xl font-bold text-yellow-700">0.00 m³</p>
-                        </div>
-                        <!-- Aggregate -->
-                        <div class="bg-green-50 p-4 rounded-lg">
-                            <p class="text-sm text-slate-500">Aggregate Required (Coarse Aggregate)</p>
-                            <p id="est-aggregate" class="text-2xl font-bold text-green-700">0.00 m³</p>
-                        </div>
-                        <!-- Steel -->
-                        <div class="bg-indigo-50 p-4 rounded-lg">
-                            <p class="text-sm text-slate-500">Steel Reinforcement (Based on %)</p>
-                            <p id="est-steel-weight" class="text-2xl font-bold text-indigo-700">0.00 kg</p>
-                            <p id="est-steel-volume" class="text-sm text-slate-600 mt-1">(0.00 m³)</p>
-                        </div>
-                    </div>
-                    <div class="result-box bg-blue-100 text-blue-800 mt-6 text-left">
-                        <h3 class="font-bold">Concrete Mix Used: <span id="est-mix-ratio">M25 (1:1:2)</span></h3>
-                        <p class="text-sm mt-1">Note: This is an estimation based on standard nominal mixes (IS 456) and a dry volume factor of 1.54. Actual quantities may vary based on site conditions, wastage, and design mix.</p>
-                    </div>
-                </div>
-            </div>
-            
-        </div>
-    </div>
-</main>
-
-<script>
-    // --- Global Constants ---
-    const ULS_LOAD_FACTOR = 1.5;
-    const STEEL_GAMMA_M0 = 1.1; // IS 800: Cl. 5.4.1
-    const DRY_VOLUME_FACTOR = 1.54; // Conversion from Wet to Dry Volume
-    const CEMENT_DENSITY_KG_M3 = 1440; // Cement density in kg/m³
-    const CEMENT_BAG_KG = 50; // Mass of one cement bag
-    const STEEL_DENSITY_KG_M3 = 7850; // Density of steel
-
-    // IS 456 Nominal Mix Ratios (Cement:Sand:Aggregate)
-    const MIX_RATIOS = {
-        'M10': [1, 3, 6],
-        'M15': [1, 2, 4],
-        'M20': [1, 1.5, 3],
-        'M25': [1, 1, 2], // Design mix is preferred, but this nominal ratio is used for conservative estimation.
-    };
-
-    // --- Utility Functions ---
-    function updateOutput(id, value, unit) {
-        document.getElementById(id).textContent = `${value.toFixed(2)} ${unit}`;
-    }
-
-    function getRccInputs() {
-        return {
-            L: parseFloat(document.getElementById('rcc-L').value) || 0,
-            w: parseFloat(document.getElementById('rcc-w').value) || 0,
-            supportType: document.getElementById('rcc-support').value,
-            b_mm: parseFloat(document.getElementById('rcc-b').value) || 0,
-            D_mm: parseFloat(document.getElementById('rcc-D').value) || 0,
-            cover_mm: parseFloat(document.getElementById('rcc-cover').value) || 0,
-            barDia: parseFloat(document.getElementById('rcc-barDia').value) || 0,
-            fck: parseFloat(document.getElementById('rcc-fck').value) || 0,
-            fy: parseFloat(document.getElementById('rcc-fy').value) || 0
-        };
-    }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Structural Design Suite (IS 456)</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Three.js for Canvas rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
-    function getSteelInputs() {
-        return {
-            L: parseFloat(document.getElementById('steel-L').value) || 0,
-            w: parseFloat(document.getElementById('steel-w').value) || 0,
-            supportType: document.getElementById('steel-support').value,
-            fy: parseFloat(document.getElementById('steel-fy').value) || 0,
-            Zp_cm3: parseFloat(document.getElementById('steel-Zp').value) || 0,
-            h_mm: parseFloat(document.getElementById('steel-h').value) || 0,
-            tw_mm: parseFloat(document.getElementById('steel-tw').value) || 0,
-            beta_b: parseFloat(document.getElementById('steel-beta_b').value) || 0
-        };
-    }
+    <!-- KaTeX CSS and JS for Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" xintegrity="sha384-0a6M/KkYp+07WbW6+R0x/pW1/s60/c6g+q5tX5p9T/k5c9C/v3gG1rVl6a0zJ5X2R" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" xintegrity="sha384-yS33P9h9P7h/c7P24c7L7t7x5c/c6g+q5tX5p9T/k5c9C/v3gG1rVl6a0zJ5X2R" crossorigin="anonymous"></script>
 
-    function getEstimationInputs() {
-        return {
-            L: parseFloat(document.getElementById('est-L').value) || 0,
-            B: parseFloat(document.getElementById('est-B').value) || 0,
-            D: parseFloat(document.getElementById('est-D').value) || 0,
-            grade: document.getElementById('est-grade').value,
-            steelPercent: parseFloat(document.getElementById('est-steel-percent').value) || 0
-        };
-    }
+    <!-- Load Firebase/Firestore -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, query, limit, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    /**
-     * Calculates M_max, V_max, and Support reactions R for UDL beam.
-     */
-    function calculateBeamForces(L, w_service, supportType) {
-        let M_max = 0;
-        let V_max = 0;
-        let R_A = 0;
-        let R_B = 0;
+        // Set Firebase Log Level
+        setLogLevel('Debug');
 
-        if (supportType === 'simply_supported') {
-            M_max = (w_service * L * L) / 8;
-            V_max = (w_service * L) / 2;
-            R_A = V_max;
-            R_B = V_max;
-        } else if (supportType === 'cantilever') {
-            M_max = (w_service * L * L) / 2;
-            V_max = w_service * L;
-            R_A = V_max;
-            R_B = 0;
-        }
+        // Global variables (from environment)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-structural-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        return { M_max, V_max, R_A, R_B };
-    }
-
-    /**
-     * Draws SFD/BMD diagrams on a canvas.
-     */
-    function drawDiagrams(canvasId, L, w_service, supportType) {
-        const canvas = document.getElementById(canvasId);
-        const ctx = canvas.getContext('2d');
-        const width = canvas.width;
-        const height = canvas.height;
+        let app, db, auth, userId = 'loading...';
         
-        ctx.clearRect(0, 0, width, height);
-        
-        const padding = 30;
-        const beamStart = padding;
-        const beamEnd = width - padding;
-        const beamLengthPx = beamEnd - beamStart;
-        
-        const { M_max, V_max } = calculateBeamForces(L, w_service, supportType);
+        window.isAuthReady = false; 
 
-        const beamY = height / 2;
-        ctx.strokeStyle = '#334155';
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.moveTo(beamStart, beamY);
-        ctx.lineTo(beamEnd, beamY);
-        ctx.stroke();
+        // Initialize Firebase and set up Auth
+        async function initFirebase() {
+            if (!firebaseConfig) {
+                console.error("Firebase config is missing.");
+                document.getElementById('userIdDisplay').textContent = "Error: Config missing";
+                return;
+            }
 
-        // Supports Visualization
-        ctx.fillStyle = '#4f46e5';
-        if (supportType === 'simply_supported') {
-            ctx.beginPath(); // Left Support (Pin)
-            ctx.moveTo(beamStart, beamY + 5);
-            ctx.lineTo(beamStart - 10, beamY + 15);
-            ctx.lineTo(beamStart + 10, beamY + 15);
-            ctx.closePath();
-            ctx.fill();
-            ctx.beginPath(); // Right Support (Roller)
-            ctx.arc(beamEnd, beamY + 12, 5, 0, 2 * Math.PI);
-            ctx.fill();
-        } else if (supportType === 'cantilever') {
-            ctx.strokeStyle = '#4f46e5';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(beamStart, beamY - 20);
-            ctx.lineTo(beamStart, beamY + 20);
-            ctx.stroke();
-            ctx.fillStyle = '#4f46e5';
-            ctx.fillRect(beamStart - 5, beamY - 20, 5, 40);
-        }
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
 
-        // UDL Representation
-        ctx.strokeStyle = '#991b1b';
-        ctx.lineWidth = 1;
-        const udlHeight = 15;
-        for (let x = beamStart + 5; x < beamEnd; x += 20) {
-            ctx.beginPath();
-            ctx.moveTo(x, beamY - 5);
-            ctx.lineTo(x, beamY - 5 - udlHeight);
-            ctx.lineTo(x - 3, beamY - 5 - udlHeight + 4);
-            ctx.moveTo(x, beamY - 5 - udlHeight);
-            ctx.lineTo(x + 3, beamY - 5 - udlHeight + 4);
-            ctx.stroke();
-        }
-        ctx.beginPath();
-        ctx.moveTo(beamStart, beamY - 5 - udlHeight);
-        ctx.lineTo(beamEnd, beamY - 5 - udlHeight);
-        ctx.stroke();
-        
-        ctx.fillStyle = '#334155';
-        ctx.font = '12px Inter';
-        ctx.textAlign = 'center';
-        ctx.fillText(`L = ${L.toFixed(1)} m`, width / 2, beamY + 30);
-        ctx.fillText(`w = ${w_service.toFixed(1)} kN/m (Service Load)`, width / 2, beamY - 30 - udlHeight);
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
 
-        // --- Diagram Plotting ---
-        const scaleSFD = (V_max !== 0) ? (height / 2 - padding) / V_max : 0;
-        const scaleBMD = (M_max !== 0) ? (height / 2 - padding) / M_max : 0;
+                onAuthStateChanged(auth, (user) => {
+                    const wasAuthReady = window.isAuthReady;
+                    if (user) {
+                        userId = user.uid;
+                        document.getElementById('userIdDisplay').textContent = `User ID: ${userId}`;
+                        window.isAuthReady = true;
+                    } else {
+                        userId = 'anonymous';
+                        document.getElementById('userIdDisplay').textContent = `User ID: ${userId}`;
+                        window.isAuthReady = true;
+                    }
+                    
+                    if (!wasAuthReady && window.isAuthReady) {
+                        setupFirestoreListeners();
+                        window.runInitialCalculationIfReady(); 
+                    }
+                });
 
-        // SFD (Top Half)
-        ctx.strokeStyle = '#4f46e5';
-        ctx.lineWidth = 2;
-        ctx.fillStyle = 'rgba(79, 70, 229, 0.2)';
-        
-        if (V_max > 0) {
-            ctx.beginPath();
-            if (supportType === 'simply_supported') {
-                ctx.moveTo(beamStart, beamY - V_max * scaleSFD);
-                ctx.lineTo(beamEnd, beamY + V_max * scaleSFD);
-                ctx.lineTo(beamEnd, beamY);
-                ctx.lineTo(beamStart, beamY);
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
-                
-                ctx.fillStyle = '#4f46e5';
-                ctx.textAlign = 'left';
-                ctx.fillText(`${V_max.toFixed(2)} kN`, beamStart + 5, beamY - V_max * scaleSFD - 5);
-                ctx.textAlign = 'right';
-                ctx.fillText(`-${V_max.toFixed(2)} kN`, beamEnd - 5, beamY + V_max * scaleSFD + 15);
-            } else if (supportType === 'cantilever') {
-                ctx.moveTo(beamStart, beamY - V_max * scaleSFD); 
-                ctx.lineTo(beamEnd, beamY); 
-                ctx.lineTo(beamStart, beamY);
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
-
-                ctx.fillStyle = '#4f46e5';
-                ctx.textAlign = 'left';
-                ctx.fillText(`${V_max.toFixed(2)} kN`, beamStart + 5, beamY - V_max * scaleSFD - 5);
+            } catch (error) {
+                console.error("Firebase initialization or sign-in failed:", error);
+                document.getElementById('userIdDisplay').textContent = `Error: ${error.message}`;
             }
         }
 
-        // BMD (Bottom Half)
-        ctx.strokeStyle = '#10b981';
-        ctx.lineWidth = 2;
-        ctx.fillStyle = 'rgba(16, 185, 129, 0.2)';
-        
-        if (M_max > 0) {
-            ctx.beginPath();
-            if (supportType === 'simply_supported') {
-                ctx.moveTo(beamStart, beamY);
-                for (let i = 0; i <= beamLengthPx; i++) {
-                    const x_m = (i / beamLengthPx) * L;
-                    const M_val = (w_service / 2) * x_m * (L - x_m);
-                    const M_px = M_val * scaleBMD;
-                    ctx.lineTo(beamStart + i, beamY + M_px);
-                }
-                ctx.lineTo(beamEnd, beamY);
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
+        function getCollectionRef() {
+            const path = `/artifacts/${appId}/public/data/design_history`;
+            return collection(db, path);
+        }
 
-                ctx.fillStyle = '#10b981';
-                ctx.textAlign = 'center';
-                ctx.fillText(`${M_max.toFixed(2)} kNm`, width / 2, beamY + M_max * scaleBMD + 15);
-            } else if (supportType === 'cantilever') {
-                ctx.moveTo(beamStart, beamY);
-                for (let i = 0; i <= beamLengthPx; i++) {
-                    const x_m_from_fixed = (i / beamLengthPx) * L; 
-                    const x_m_from_free = L - x_m_from_fixed;
-                    const M_val = (w_service * x_m_from_free * x_m_from_free) / 2;
-                    const M_px = M_val * scaleBMD; 
-                    ctx.lineTo(beamStart + i, beamY + M_px); 
-                }
-                ctx.lineTo(beamEnd, beamY);
-                ctx.lineTo(beamStart, beamY);
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
+        // --- Firestore Real-time Listeners ---
+        function setupFirestoreListeners() {
+            if (!window.isAuthReady || !db) return;
 
-                ctx.fillStyle = '#10b981';
-                ctx.textAlign = 'left';
-                ctx.fillText(`-${M_max.toFixed(2)} kNm`, beamStart + 5, beamY + M_max * scaleBMD + 15);
+            const historyQuery = query(
+                getCollectionRef(),
+                orderBy("timestamp", "desc"),
+                limit(5)
+            );
+
+            onSnapshot(historyQuery, (snapshot) => {
+                const historyList = document.getElementById('designHistoryList');
+                historyList.innerHTML = '';
+                if (snapshot.empty) {
+                     historyList.innerHTML = '<li class="p-3 text-[#8686AC]">No designs found. Run a calculation to save.</li>';
+                }
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const li = document.createElement('li');
+                    li.className = 'p-3 bg-[#1A1A47] hover:bg-[#202050] transition duration-150 rounded-lg cursor-pointer text-sm text-gray-200 truncate border-l-4 border-[#8686AC]';
+                    const timestamp = data.timestamp?.toDate ? data.timestamp.toDate().toLocaleTimeString() : 'N/A';
+                    
+                    let statusClass = 'text-green-400';
+                    if (data.status.includes('Unsafe')) statusClass = 'text-red-400';
+
+                    li.innerHTML = `
+                        <div class="font-medium flex justify-between items-center">
+                            <span>M-Req: ${data.momentRequired} kNm</span>
+                            <span class="${statusClass} font-bold">${data.status.replace(/ \((Flexure|Shear)\)/, '')}</span>
+                        </div>
+                        <div class="text-xs text-[#8686AC] mt-0.5">
+                            Span: ${data.span} m | ${timestamp}
+                        </div>
+                    `;
+                    li.onclick = () => loadDesignFromHistory(data);
+                    historyList.appendChild(li);
+                });
+            }, (error) => {
+                console.error("Error listening to history collection:", error);
+            });
+        }
+
+        function loadDesignFromHistory(data) {
+            document.getElementById('spanInput').value = data.span;
+            document.getElementById('dInput').value = data.depth;
+            document.getElementById('bInput').value = data.width;
+            document.getElementById('fckInput').value = data.fck;
+            document.getElementById('fyInput').value = data.fy;
+            document.getElementById('muInput').value = data.momentRequired;
+            document.getElementById('vuInput').value = data.shearRequired;
+            
+            document.getElementById('calculateButton').click();
+
+            const messageBox = document.getElementById('messageBox');
+            messageBox.innerHTML = createMessage('Loaded previous design history.', 'info');
+        }
+
+
+        window.saveDesignToFirestore = async function(designData) {
+            if (!window.isAuthReady || !db) {
+                console.error("Firestore not ready. Cannot save data.");
+                return;
+            }
+            try {
+                const docRef = doc(getCollectionRef(), new Date().getTime().toString());
+                
+                await setDoc(docRef, {
+                    ...designData,
+                    userId: userId,
+                    timestamp: new Date()
+                });
+            } catch (e) {
+                console.error("Error adding document: ", e);
             }
         }
-    }
-
-    // --- IS 456 (RCC) Design Logic ---
-
-    function runRCCDesign() {
-        const { L, w, supportType, b_mm, D_mm, cover_mm, barDia, fck, fy } = getRccInputs();
         
-        if (L > 0 && w >= 0) {
-            drawDiagrams('rcc-diagram-canvas', L, w, supportType);
-        } else {
-            const canvas = document.getElementById('rcc-diagram-canvas');
-            canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-        }
-
-        if (L <= 0 || w < 0 || b_mm <= 0 || D_mm <= 0 || cover_mm < 0 || fck <= 0 || fy <= 0) {
-            document.getElementById('rcc-Mservice').textContent = `- kNm`;
-            document.getElementById('rcc-Mu').textContent = `- kNm`;
-            document.getElementById('rcc-Mulim').textContent = `- kNm`;
-            document.getElementById('rcc-design-status').textContent = 'Please enter valid inputs.';
-            document.getElementById('rcc-design-status').className = 'result-box mt-4 font-semibold text-lg flex items-center justify-center bg-gray-200 text-slate-700';
-            return;
-        }
-
-        const { M_max: M_service_kNm } = calculateBeamForces(L, w, supportType); 
-
-        const d_mm = D_mm - cover_mm;
-        const Mu_kNm = M_service_kNm * ULS_LOAD_FACTOR;
-        const Mu_Nmm = Mu_kNm * 1e6;
-
-        let xu_max_ratio;
-        if (fy === 415) xu_max_ratio = 0.48;
-        else if (fy === 500) xu_max_ratio = 0.46;
-        else xu_max_ratio = 0.53; 
-
-        const Mu_lim_Nmm = 0.36 * xu_max_ratio * (1 - 0.42 * xu_max_ratio) * b_mm * d_mm * d_mm * fck;
-        const Mu_lim_kNm = Mu_lim_Nmm / 1e6;
-
-        // --- Update Analysis Results ---
-        document.getElementById('rcc-Mservice').textContent = `${M_service_kNm.toFixed(2)} kNm`;
-        document.getElementById('rcc-Mu').textContent = `${Mu_kNm.toFixed(2)} kNm`;
-        document.getElementById('rcc-Mulim').textContent = `${Mu_lim_kNm.toFixed(2)} kNm`;
-        
-        const designStatusEl = document.getElementById('rcc-design-status');
-        designStatusEl.textContent = '';
-        designStatusEl.className = 'result-box mt-4 font-semibold text-lg flex items-center justify-center';
-
-        let Ast_req = 0;
-        let Ast_provided = 0;
-        let numBars = 0;
-        const barArea = Math.PI * Math.pow(barDia, 2) / 4;
-
-        if (Mu_kNm > Mu_lim_kNm) {
-            designStatusEl.innerHTML = `SECTION FAIL: M<sub>u</sub> > M<sub>u, lim</sub>. Increase D, b, or f<sub>ck</sub>.`;
-            designStatusEl.classList.add('compliance-fail');
-        } else {
-            designStatusEl.innerHTML = `SECTION ADEQUATE: M<sub>u</sub> &le; M<sub>u, lim</sub>. Proceed to steel calculation.`;
-            designStatusEl.classList.add('compliance-pass');
-
-            const term = 1 - Math.sqrt(1 - (4.6 * Mu_Nmm) / (fck * b_mm * d_mm * d_mm));
-            Ast_req = (0.5 * fck / fy) * term * b_mm * d_mm;
+        /**
+         * Renders all elements marked with the 'math-label' class using KaTeX.
+         * This should run once on load.
+         */
+        function renderAllStaticMath() {
+            if (typeof katex === 'undefined') {
+                // If KaTeX hasn't loaded yet, try again shortly.
+                setTimeout(renderAllStaticMath, 100);
+                return;
+            }
             
-            numBars = Math.ceil(Ast_req / barArea);
-            numBars = Math.max(numBars, Ast_req > 0 && barDia > 0 ? 2 : 0); 
-            Ast_provided = numBars * barArea;
+            // Render static elements using data-latex
+            document.querySelectorAll('.math-label, .diagram-label').forEach(el => {
+                let latex = el.getAttribute('data-latex');
 
-            const Ast_min = (0.85 * b_mm * d_mm) / fy;
-            const Ast_max = 0.04 * b_mm * D_mm;
-            const minCheckPass = Ast_provided >= Ast_min;
-            const maxCheckPass = Ast_provided <= Ast_max;
+                if (latex) {
+                    // Initial render uses '\text{N/A}' as the value placeholder
+                    let initialLatex = latex.replace(/\{\{VALUE\}\}/g, '\\text{N/A}');
+
+                    try {
+                        // Use a custom KaTeX color (e.g., the secondary accent color)
+                        const coloredLatex = `\\color{#8686AC}{${initialLatex}}`;
+                        
+                        katex.render(coloredLatex, el, {
+                            throwOnError: false,
+                            displayMode: false 
+                        });
+                    } catch (e) {
+                        console.error("KaTeX rendering error for element:", el, e);
+                        // Fallback to plain text if rendering fails
+                        el.textContent = `[Math Render Error: ${latex}]`; 
+                    }
+                }
+            });
+        }
+
+        // Initialize on load
+        window.onload = function() {
+            // Wait for Katex to be available before running initial render
+            const checkKatexReady = setInterval(() => {
+                if (typeof katex !== 'undefined') {
+                    clearInterval(checkKatexReady);
+                    renderAllStaticMath(); // Render LaTeX once on load
+                    initFirebase();
+                    initCanvas(); 
+                }
+            }, 50);
+        }
+
+        window.db = db;
+        window.auth = auth;
+        window.app = app;
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        
+        /* Dark Theme Colors:
+            #0F0E47 - Primary Background
+            #272757 - Card/Panel Background
+            #505081 - Primary Accent
+            #8686AC - Secondary Accent / Default Text
+        */
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0F0E47; /* Primary Background */
+            color: #8686AC; /* Secondary Accent / Default Text */
+        }
+
+        .main-card {
+            background-color: #272757; /* Card/Panel Background */
+            color: #E0E0FF; /* Light text for readability */
+        }
+        
+        /* Input styling for dark mode */
+        .input-group input, .input-group select {
+            background-color: #0F0E47; /* Darkest background for inputs */
+            border-color: #505081; /* Primary Accent border */
+            color: #E0E0FF;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            border-color: #8686AC;
+            box-shadow: 0 0 0 1px #8686AC;
+        }
+
+        .tab-button {
+            transition: all 0.3s ease;
+            color: #8686AC;
+        }
+
+        .tab-button.active {
+            border-bottom: 4px solid #505081; /* Primary Accent */
+            color: #E0E0FF; /* White text when active */
+            font-weight: 600;
+            background-color: #272757;
+        }
+
+        .tab-button:not(.active):hover {
+            background-color: #1A1A47;
+            color: #E0E0FF;
+        }
+
+        .input-group label {
+            font-size: 0.875rem; 
+            font-weight: 500; 
+            color: #8686AC; 
+        }
+
+        /* Result Box Styling */
+        .result-box {
+            background-color: #1A1A47;
+            color: #E0E0FF;
+            border: 1px solid #505081;
+        }
+        .result-box.safe {
+            background-color: #1a4738; /* Dark Green */
+            border-left: 6px solid #34D399; /* Light Green */
+            color: #D1FAE5; 
+        }
+
+        .result-box.unsafe {
+            background-color: #471a1a; /* Dark Red */
+            border-left: 6px solid #F87171; /* Light Red */
+            color: #FEE2E2; 
+        }
+
+        /* Message Box Styling */
+        .message-box.info {
+            background-color: #1a2c47; 
+            border-left: 6px solid #505081; 
+            color: #E0E0FF; 
+        }
+
+        /* Diagram Styles */
+        #diagramCanvasContainer {
+            background-color: #0F0E47;
+            border: 2px solid #505081;
+        }
+
+        .diagram-label {
+            background-color: rgba(39, 39, 87, 0.9); /* #272757 with opacity */
+            color: #E0E0FF;
+        }
+        
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col items-center p-4 sm:p-6">
+
+    <!-- Main Container -->
+    <div class="w-full max-w-6xl main-card rounded-xl shadow-2xl p-4 sm:p-8">
+        
+        <!-- Header -->
+        <header class="mb-6 border-b border-[#505081] pb-4">
+            <h1 class="text-3xl font-extrabold text-[#E0E0FF] leading-tight">
+                Integrated Structural Design Suite
+            </h1>
+            <p class="text-[#8686AC] mt-1">
+                IS 456:2000 Code Checks and Visualization Tools
+            </p>
+            <div id="userIdDisplay" class="text-xs text-[#8686AC] mt-2 font-mono">
+                Loading User ID...
+            </div>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="flex border-b border-[#505081] mb-6 overflow-x-auto bg-[#0F0E47] rounded-t-lg">
+            <button id="tabDesign" onclick="switchTab('design')" class="tab-button active flex-1 py-3 px-4 border-b-4 border-transparent min-w-[150px]">
+                <span class="math-label" data-latex="\text{M}_u / \text{V}_u"></span> Check
+            </button>
+            <button id="tabDiagrams" onclick="switchTab('diagrams')" class="tab-button flex-1 py-3 px-4 border-b-4 border-transparent min-w-[150px]">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM5.5 7A1.5 1.5 0 017 8.5h6A1.5 1.5 0 0114.5 7a1.5 1.5 0 010 3H13a1 1 0 000 2h1.5a1.5 1.5 0 010 3H7a1.5 1.5 0 010-3H8a1 1 0 100-2H5.5a1.5 1.5 0 010-3zM10 17a1 1 0 100-2 1 1 0 000 2z"/></svg>
+                SFD & BMD Diagrams
+            </button>
+             <button id="tabSlab" onclick="switchTab('slab')" class="tab-button flex-1 py-3 px-4 border-b-4 border-transparent min-w-[150px]">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zM4 6h12v2H4V6zm0 4h12v4H4v-4z"/></svg>
+                Slab Estimation Tool
+            </button>
+            <button id="tabCantilever" onclick="switchTab('cantilever')" class="tab-button flex-1 py-3 px-4 border-b-4 border-transparent min-w-[150px]">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.3 2.1c-.6-.7-1.4-1.1-2.3-1.1s-1.7.4-2.3 1.1L3.7 5.7c-.7.8-.8 2-.2 2.8l2.5 2.5a.5.5 0 00.7 0l2.5-2.5a.5.5 0 000-.7L6.6 4.9l-.3-.3a1.5 1.5 0 01-.2-2.1c.3-.5.9-.7 1.4-.7h3.1c.5 0 1.1.2 1.4.7.4.6.4 1.4 0 2L9.7 7.7a.5.5 0 00.7 0l2.5-2.5c.6-.8.5-2-.2-2.8L11.3 2.1z" clip-rule="evenodd"/></svg>
+                Cantilever Beam Design
+            </button>
+            <button id="tabHistory" onclick="switchTab('history')" class="tab-button flex-1 py-3 px-4 border-b-4 border-transparent min-w-[150px]">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l3 3a1 1 0 001.414-1.414L11 9.586V6z" clip-rule="evenodd"/></svg>
+                Design History
+            </button>
+        </div>
+
+        <!-- RC Beam Flexure/Shear Check Content -->
+        <div id="contentDesign" class="tab-content">
+            <div class="grid lg:grid-cols-3 gap-8">
+                
+                <!-- Input Panel (Column 1 & 2) -->
+                <div class="lg:col-span-2">
+                    <h2 class="text-xl font-semibold text-[#E0E0FF] mb-4 border-b border-[#505081] pb-2">RC Beam Flexure Check (Simply Supported)</h2>
+                    <form id="designForm" class="grid sm:grid-cols-2 gap-x-6 gap-y-4 mb-6 p-6 bg-[#0F0E47] rounded-xl shadow-lg border border-[#505081]">
+                        
+                        <!-- Geometry Inputs -->
+                        <div class="col-span-2">
+                            <h3 class="text-lg font-medium text-[#8686AC] mb-3 border-b border-[#505081] pb-1">Geometry & Load</h3>
+                        </div>
+                        <div class="input-group">
+                            <label for="spanInput">Clear Span (L) [m]</label>
+                            <input type="number" id="spanInput" value="5" min="0.1" step="0.1" class="w-full mt-1 p-2 border rounded-lg focus:ring-[#8686AC] focus:border-[#8686AC]">
+                        </div>
+                        <div class="input-group">
+                            <label for="dInput">Overall Depth (D) [mm]</label>
+                            <input type="number" id="dInput" value="450" min="10" step="1" class="w-full mt-1 p-2 border rounded-lg focus:ring-[#8686AC] focus:border-[#8686AC]">
+                        </div>
+                        <div class="input-group">
+                            <label for="bInput">Width of Beam (b) [mm]</label>
+                            <input type="number" id="bInput" value="300" min="10" step="1" class="w-full mt-1 p-2 border rounded-lg focus:ring-[#8686AC] focus:border-[#8686AC]">
+                        </div>
+                        <div class="input-group">
+                            <label for="effectiveCoverInput"><span class="math-label" data-latex="\text{Effective Cover} (d')"></span> [mm]</label>
+                            <input type="number" id="effectiveCoverInput" value="50" min="10" step="1" class="w-full mt-1 p-2 border rounded-lg focus:ring-[#8686AC] focus:border-[#8686AC]">
+                        </div>
+
+                        <!-- Material Inputs -->
+                        <div class="col-span-2 mt-4">
+                            <h3 class="text-lg font-medium text-[#8686AC] mb-3 border-b border-[#505081] pb-1">Material Grades</h3>
+                        </div>
+                        <div class="input-group">
+                            <label for="fckInput"><span class="math-label" data-latex="\text{Concrete Grade} (f_{ck})"></span> [N/mm²]</label>
+                            <select id="fckInput" class="w-full mt-1 p-2 border rounded-lg focus:ring-[#8686AC] focus:border-[#8686AC]">
+                                <option value="20">M20 (<span class="math-label" data-latex="f_{ck}=20"></span>)</option>
+                                <option value="25">M25 (<span class="math-label" data-latex="f_{ck}=25"></span>)</option>
+                                <option value="30">M30 (<span class="math-label" data-latex="f_{ck}=30"></span>)</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="fyInput"><span class="math-label" data-latex="\text{Steel Grade} (f_y)"></span> [N/mm²]</label>
+                            <select id="fyInput" class="w-full mt-1 p-2 border rounded-lg focus:ring-[#8686AC] focus:border-[#8686AC]">
+                                <option value="415">Fe 415</option>
+                                <option value="250">Fe 250</option>
+                                <option value="500">Fe 500</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Load & Area of Steel Inputs -->
+                        <div class="col-span-2 mt-4">
+                            <h3 class="text-lg font-medium text-[#8686AC] mb-3 border-b border-[#505081] pb-1">Factored Loads & Reinforcement</h3>
+                        </div>
+                        <div class="input-group">
+                            <label for="muInput"><span class="math-label" data-latex="\text{Required Factored Moment} (\text{M}_{u, req})"></span> [kNm]</label>
+                            <input type="number" id="muInput" value="75" min="0" step="0.1" class="w-full mt-1 p-2 border rounded-lg focus:ring-[#8686AC] focus:border-[#8686AC]">
+                        </div>
+                        <div class="input-group">
+                            <label for="vuInput"><span class="math-label" data-latex="\text{Required Factored Shear} (\text{V}_{u, req})"></span> [kN]</label>
+                            <input type="number" id="vuInput" value="50" min="0" step="0.1" class="w-full mt-1 p-2 border rounded-lg focus:ring-[#8686AC] focus:border-[#8686AC]">
+                        </div>
+                         <div class="input-group col-span-2">
+                            <label for="astInput"><span class="math-label" data-latex="\text{Provided Area of Steel} (A_{st, prov})"></span> [mm²]</label>
+                            <input type="number" id="astInput" value="1000" min="0" step="1" class="w-full mt-1 p-2 border rounded-lg focus:ring-[#8686AC] focus:border-[#8686AC]">
+                        </div>
+
+
+                    </form>
+                    
+                    <button id="calculateButton" onclick="calculateDesign()" class="w-full bg-[#505081] hover:bg-[#8686AC] text-[#0F0E47] font-bold py-3 px-4 rounded-lg transition duration-300 shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-[#505081] focus:ring-opacity-50 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0l2.585 2.585A1 1 0 0021 18.172V5.828a1 1 0 00-1.707-.707L16 8m-4 0h.01"/></svg>
+                        Run Design Check
+                    </button>
+                    
+                    <div id="messageBox" class="mt-4">
+                        <!-- Messages (Info/Error) will appear here -->
+                    </div>
+                </div>
+
+                <!-- Output Panel (Column 3) -->
+                <div class="lg:col-span-1">
+                    <h2 class="text-xl font-semibold text-[#E0E0FF] mb-4 border-b border-[#505081] pb-2">Design Results</h2>
+                    
+                    <div id="flexureResult" class="result-box rounded-xl p-5 mb-6 shadow-md transition duration-300">
+                        <h3 class="font-bold text-lg mb-3 flex items-center text-[#8686AC]">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-[#505081]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                            Flexural Strength (<span class="math-label" data-latex="M_{u, lim}"></span>)
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center text-sm border-b border-[#505081] pb-1">
+                                <span class="text-[#8686AC]"><span class="math-label" data-latex="\text{Effective Depth} (d)"></span>:</span>
+                                <span id="effectiveDepthOutput" class="font-mono text-[#E0E0FF]">N/A</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm border-b border-[#505081] pb-1">
+                                <span class="text-[#8686AC]"><span class="math-label" data-latex="\text{Limiting Moment Factor} (R_{u, lim})"></span>:</span>
+                                <span id="RuLimOutput" class="font-mono text-[#E0E0FF]">N/A</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm border-b border-[#505081] pb-1">
+                                <span class="text-[#8686AC]"><span class="math-label" data-latex="\text{Limiting Moment} (M_{u, lim})"></span>:</span>
+                                <span id="MuLimOutput" class="font-mono text-xl font-bold text-[#E0E0FF]">N/A</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm border-b border-[#505081] pb-1">
+                                <span class="text-[#8686AC]"><span class="math-label" data-latex="\text{Required Steel Area} (A_{st, req})"></span>:</span>
+                                <span id="AstRequiredOutput" class="font-mono text-[#E0E0FF]">N/A</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Status Summary -->
+                    <div id="statusSummary" class="result-box p-5 rounded-xl shadow-lg text-center border-2 border-dashed border-[#505081]">
+                        <h4 id="statusTitle" class="text-2xl font-extrabold mb-1 text-[#E0E0FF]">RUN CALCULATION</h4>
+                        <p id="statusMessage" class="text-sm text-[#8686AC]">Click "Run Design Check" to start the analysis.</p>
+                        <p id="statusComparison" class="text-xs mt-2 font-mono text-[#505081]"></p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Diagrams Tab Content -->
+        <div id="contentDiagrams" class="tab-content hidden">
+            <h2 class="text-xl font-semibold text-[#E0E0FF] mb-4 border-b border-[#505081] pb-2">Shear Force and Bending Moment Diagrams (UDL)</h2>
             
-            // --- Update Reinforcement Schedule ---
-            document.getElementById('rcc-Ast-req').textContent = Ast_req.toFixed(2);
-            document.getElementById('rcc-Ast-prov').textContent = Ast_provided.toFixed(2);
-            document.getElementById('rcc-Num-bars').textContent = numBars.toFixed(0);
-            document.getElementById('rcc-barDia-out').textContent = barDia.toFixed(0);
+            <div class="flex justify-center space-x-4 mb-4">
+                <button onclick="setCurrentDiagram('BMD')" id="diagramToggleBMD" class="px-6 py-2 rounded-full font-semibold transition bg-[#505081] text-[#0F0E47] shadow-lg hover:bg-[#8686AC]">
+                    Show Bending Moment Diagram
+                </button>
+                 <button onclick="setCurrentDiagram('SFD')" id="diagramToggleSFD" class="px-6 py-2 rounded-full font-semibold transition bg-[#0F0E47] text-[#8686AC] hover:bg-[#1A1A47] border border-[#505081]">
+                    Show Shear Force Diagram
+                </button>
+            </div>
 
-            // --- Update Compliance Status ---
-            const minEl = document.getElementById('rcc-min-check-status');
-            const maxEl = document.getElementById('rcc-max-check-status');
+            <div id="diagramCanvasContainer" class="shadow-xl">
+                <!-- Three.js canvas will be injected here -->
+                <div id="diagramLabelsOverlay">
+                    <div id="labelSpan" class="diagram-label left-1/2 -translate-x-1/2 bottom-[10px] border-b-2 border-[#505081] p-1">Span (L) = N/A</div>
+                    <!-- The following labels use KaTeX templates -->
+                    <div id="labelVmaxLeft" class="diagram-label left-[5%] top-[10%] text-[#8686AC] border-l-2 border-[#8686AC] math-label" data-latex="\text{V}_{max} = {{VALUE}} \text{ kN}"></div>
+                    <div id="labelMmax" class="diagram-label left-1/2 -translate-x-1/2 top-[10%] text-[#F87171] border-t-2 border-[#F87171] math-label" data-latex="\text{M}_{max} = {{VALUE}} \text{ kNm}"></div>
+                    <div id="labelVmaxRight" class="diagram-label right-[5%] top-[10%] text-[#8686AC] border-r-2 border-[#8686AC] math-label" data-latex="\text{V}_{max} = {{VALUE}} \text{ kN}"></div>
+                </div>
+            </div>
+            <div class="mt-4 p-4 bg-[#1A1A47] rounded-xl text-sm text-[#8686AC] border border-[#505081]">
+                <p><strong>Note:</strong> Diagrams are shown for a **Simply Supported Beam with UDL** and are scaled using the **Factored Moment (<span class="math-label" data-latex="M_{u, req}"></span>) and Shear (<span class="math-label" data-latex="V_{u, req}"></span>)** values provided in the design check tab to define the visual height.</p>
+            </div>
+        </div>
+        
+        <!-- Slab Estimation Tab Content -->
+        <div id="contentSlab" class="tab-content hidden">
+            <h2 class="text-xl font-semibold text-[#E0E0FF] mb-4 border-b border-[#505081] pb-2">One-Way Slab Design and Estimation (Placeholder)</h2>
+            <div class="p-6 bg-[#0F0E47] rounded-xl shadow-inner border border-[#505081]">
+                 <p class="text-[#8686AC] font-semibold mb-4">
+                    This section is a **placeholder**. The calculation logic will be implemented in the next update.
+                </p>
+                <form class="grid sm:grid-cols-2 gap-x-6 gap-y-4">
+                    <div class="input-group">
+                        <label for="slabThicknessInput">Slab Thickness (D) [mm]</label>
+                        <input type="number" id="slabThicknessInput" value="150" class="w-full mt-1 p-2 border rounded-lg">
+                    </div>
+                    <div class="input-group">
+                        <label for="liveLoadInput">Live Load (LL) [kN/m²]</label>
+                        <input type="number" id="liveLoadInput" value="3" class="w-full mt-1 p-2 border rounded-lg">
+                    </div>
+                     <div class="input-group">
+                        <label for="spanShortInput"><span class="math-label" data-latex="\text{Short Span} (L_x)"></span> [m]</label>
+                        <input type="number" id="spanShortInput" value="4" class="w-full mt-1 p-2 border rounded-lg">
+                    </div>
+                    <div class="input-group">
+                        <label for="spanLongInput"><span class="math-label" data-latex="\text{Long Span} (L_y)"></span> [m]</label>
+                        <input type="number" id="spanLongInput" value="6" class="w-full mt-1 p-2 border rounded-lg">
+                    </div>
+                    <div class="input-group">
+                        <label for="slabFckInput"><span class="math-label" data-latex="\text{Concrete Grade} (f_{ck})"></span> [N/mm²]</label>
+                        <select id="slabFckInput" class="w-full mt-1 p-2 border rounded-lg">
+                            <option value="20">M20</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="slabFyInput"><span class="math-label" data-latex="\text{Steel Grade} (f_y)"></span> [N/mm²]</label>
+                        <select id="slabFyInput" class="w-full mt-1 p-2 border rounded-lg">
+                            <option value="415">Fe 415</option>
+                        </select>
+                    </div>
+                </form>
+                <button disabled class="w-full mt-6 bg-[#505081] text-[#0F0E47] font-bold py-3 rounded-lg opacity-50 cursor-not-allowed">
+                    Calculate Slab Reinforcement (Coming Soon)
+                </button>
+            </div>
+        </div>
+
+        <!-- Cantilever Beam Tab Content -->
+        <div id="contentCantilever" class="tab-content hidden">
+            <h2 class="text-xl font-semibold text-[#E0E0FF] mb-4 border-b border-[#505081] pb-2">Cantilever Beam Design Check (Placeholder)</h2>
+            <div class="p-6 bg-[#0F0E47] rounded-xl shadow-inner border border-[#505081]">
+                <p class="text-[#8686AC] font-semibold mb-4">
+                    This section is a **placeholder**. The calculation logic will be implemented in the next update.
+                </p>
+                <form class="grid sm:grid-cols-2 gap-x-6 gap-y-4">
+                    <div class="input-group">
+                        <label for="cantileverSpanInput"><span class="math-label" data-latex="\text{Cantilever Span} (L_c)"></span> [m]</label>
+                        <input type="number" id="cantileverSpanInput" value="2.5" class="w-full mt-1 p-2 border rounded-lg">
+                    </div>
+                    <div class="input-group">
+                        <label for="loadTypeCantilever">Load Type</label>
+                        <select id="loadTypeCantilever" class="w-full mt-1 p-2 border rounded-lg">
+                            <option value="UDL">Uniformly Distributed Load (UDL)</option>
+                            <option value="point">Point Load at End (P)</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="cantileverDInput">Overall Depth (D) [mm]</label>
+                        <input type="number" id="cantileverDInput" value="350" class="w-full mt-1 p-2 border rounded-lg">
+                    </div>
+                     <div class="input-group">
+                        <label for="cantileverLoadInput"><span class="math-label" data-latex="\text{Factored Load} (w_u / P_u)"></span> [kN/m or kN]</label>
+                        <input type="number" id="cantileverLoadInput" value="30" class="w-full mt-1 p-2 border rounded-lg">
+                    </div>
+                </form>
+                <button disabled class="w-full mt-6 bg-[#505081] text-[#0F0E47] font-bold py-3 rounded-lg opacity-50 cursor-not-allowed">
+                    Calculate Cantilever Design (Coming Soon)
+                </button>
+            </div>
+        </div>
+
+        <!-- History Tab Content -->
+        <div id="contentHistory" class="tab-content hidden">
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="md:col-span-2">
+                    <h2 class="text-xl font-semibold text-[#E0E0FF] mb-4 border-b border-[#505081] pb-2">Recent Design History</h2>
+                    <ul id="designHistoryList" class="space-y-3 p-2 bg-[#0F0E47] rounded-xl border border-[#505081]">
+                        <li class="p-3 text-[#8686AC]">History will load here in real-time...</li>
+                    </ul>
+                </div>
+                <div class="md:col-span-1 p-6 bg-[#1A1A47] rounded-xl shadow-inner border border-[#505081]">
+                     <h3 class="text-lg font-semibold text-[#E0E0FF] mb-3">About History</h3>
+                     <p class="text-sm text-[#8686AC]">This list automatically tracks and displays your last 5 design calculations, allowing you to quickly reload previous designs for modification or review. Data is stored in a public Firestore collection under your anonymous user ID.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Custom Footer -->
+        <footer id="customFooter" class="mt-8 pt-4 border-t border-[#505081] text-center text-sm text-[#8686AC]">
+            <p class="font-semibold text-[#E0E0FF]">Developed by Arif Ahmad, Civil Engineer (2025)</p>
+            <p class="mt-1">Email: <a href="mailto:aarif907@gmail.com" class="text-[#505081] hover:text-[#8686AC]">aarif907@gmail.com</a></p>
+            <p class="text-xs mt-3 text-[#505081]">Disclaimer: All calculations are based on assumed values and simplified models for educational and preliminary purposes, intended to follow IS 456:2000 principles.</p>
+        </footer>
+
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        const RULIM_MAP = {
+            '250': 0.148,
+            '415': 0.138,
+            '500': 0.133
+        };
+
+        const canvasContainer = document.getElementById('diagramCanvasContainer');
+        let scene, camera, renderer, axes, sfdCurve, bmdCurve, beamMesh;
+        let currentDiagram = 'BMD'; // Default diagram to show
+        let initialCalculationRun = false; 
+        let isRendererInitialized = false; 
+
+        /**
+         * Sets the current visible diagram (SFD or BMD) and updates the button style.
+         */
+        window.setCurrentDiagram = function(diagramType) {
+            currentDiagram = diagramType;
+
+            // Update button styles
+            const isBMD = diagramType === 'BMD';
+            const bmdBtn = document.getElementById('diagramToggleBMD');
+            const sfdBtn = document.getElementById('diagramToggleSFD');
+
+            bmdBtn.className = `px-6 py-2 rounded-full font-semibold transition shadow-lg ${isBMD ? 'bg-[#505081] text-[#0F0E47] hover:bg-[#8686AC]' : 'bg-[#0F0E47] text-[#8686AC] hover:bg-[#1A1A47] border border-[#505081]'}`;
+            sfdBtn.className = `px-6 py-2 rounded-full font-semibold transition shadow-lg ${!isBMD ? 'bg-[#505081] text-[#0F0E47] hover:bg-[#8686AC]' : 'bg-[#0F0E47] text-[#8686AC] hover:bg-[#1A1A47] border border-[#505081]'}`;
+
+            // Update visibility and force redraw
+            if (isRendererInitialized) {
+                if (sfdCurve) sfdCurve.visible = !isBMD;
+                if (bmdCurve) bmdCurve.visible = isBMD;
+                renderer.render(scene, camera);
+                // Update labels 
+                updateDiagramLabels(
+                    parseFloat(document.getElementById('spanInput').value) || 5,
+                    parseFloat(document.getElementById('muInput').value) || 75,
+                    parseFloat(document.getElementById('vuInput').value) || 50
+                );
+            }
+        }
+
+        window.runInitialCalculationIfReady = function() {
+            if (window.isAuthReady && isRendererInitialized && !initialCalculationRun) {
+                initialCalculationRun = true;
+                calculateDesign(); 
+            }
+        }
+
+
+        function createMessage(message, type) {
+            let color, icon;
+            switch (type) {
+                case 'success':
+                    color = 'bg-green-800 border-green-500 text-green-200';
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>`;
+                    break;
+                case 'error':
+                    color = 'bg-red-800 border-red-500 text-red-200';
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>`;
+                    break;
+                case 'info':
+                default:
+                    color = 'bg-[#1A1A47] border-[#505081] text-[#8686AC]';
+                    icon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg>`;
+            }
+
+            return `
+                <div class="p-3 border-l-4 rounded-lg flex items-start ${color} message-box mt-3">
+                    ${icon}
+                    <p class="text-sm">${message}</p>
+                </div>
+            `;
+        }
+
+
+        /**
+         * Main function to perform the structural design check.
+         */
+        window.calculateDesign = function() {
+            const span = parseFloat(document.getElementById('spanInput').value); // L in m
+            const D = parseFloat(document.getElementById('dInput').value); // Overall Depth in mm
+            const b = parseFloat(document.getElementById('bInput').value); // Width in mm
+            const dPrime = parseFloat(document.getElementById('effectiveCoverInput').value); // Effective Cover in mm
+            const fck = parseFloat(document.getElementById('fckInput').value);
+            const fy = document.getElementById('fyInput').value;
+            const MuReq = parseFloat(document.getElementById('muInput').value); // Mu,req in kNm
+            const VuReq = parseFloat(document.getElementById('vuInput').value); // Vu,req in kN
+            const AstProv = parseFloat(document.getElementById('astInput').value); // Ast,prov in mm²
+
+            const messageBox = document.getElementById('messageBox');
+            messageBox.innerHTML = '';
             
-            minEl.innerHTML = `Min Steel (A<sub>st, min</sub>): ${Ast_min.toFixed(2)} mm² <br> Status: ${minCheckPass ? '<span class="text-green-700 font-bold">PASS</span>' : '<span class="text-red-700 font-bold">FAIL</span>'} (A<sub>st, prov</sub> &ge; A<sub>st, min</sub>)`;
-            minEl.classList.toggle('bg-green-50', minCheckPass);
-            minEl.classList.toggle('bg-red-50', !minCheckPass);
+            // Input Validation
+            if (isNaN(span) || isNaN(D) || isNaN(b) || isNaN(dPrime) || isNaN(fck) || isNaN(MuReq) || isNaN(VuReq) || isNaN(AstProv)) {
+                messageBox.innerHTML = createMessage('Please ensure all input fields are filled with valid numbers.', 'error');
+                return;
+            }
 
-            maxEl.innerHTML = `Max Steel (A<sub>st, max</sub>): ${Ast_max.toFixed(2)} mm² <br> Status: ${maxCheckPass ? '<span class="text-green-700 font-bold">PASS</span>' : '<span class="text-red-700 font-bold">FAIL</span>'} (A<sub>st, prov</sub> &le; A<sub>st, max</sub>)`;
-            maxEl.classList.toggle('bg-green-50', maxCheckPass);
-            maxEl.classList.toggle('bg-red-50', !maxCheckPass);
-        }
-    }
+            const d = D - dPrime; // Effective Depth (d) in mm
 
-    // --- IS 800 (Steel) Design Logic ---
+            if (d <= 0 || d <= dPrime) {
+                messageBox.innerHTML = createMessage('Effective depth (d) is zero or negative. Ensure overall depth (D) is greater than effective cover (d\').', 'error');
+                return;
+            }
+            
+            // --- Flexural Strength (Mu,lim) Calculation ---
+            const RuLim = RULIM_MAP[fy];
+            const MuLim_N_mm = RuLim * fck * b * d * d;
+            const MuLim_kNm = MuLim_N_mm / (10**6); // Convert N-mm to kNm
 
-    function updateStatus(elementId, isPassing, message) {
-        const el = document.getElementById(elementId);
-        el.className = 'result-box font-bold ' + (isPassing ? 'compliance-pass' : 'compliance-fail');
-        el.innerHTML = `<div>${isPassing ? '&#10003; PASS' : '&#10007; FAIL'}</div><div class="text-sm font-normal mt-1">${message}</div>`;
-    }
+            // --- Required Steel Area (Ast,req) Calculation ---
+            const term = (4.6 * MuReq * 10**6) / (fck * b * d * d);
+            let AstReq = NaN;
+            let isSafe = false;
 
-    function runSteelDesign() {
-        const { L, w, supportType, fy, Zp_cm3, h_mm, tw_mm, beta_b } = getSteelInputs();
-        
-        if (L > 0 && w >= 0) {
-            drawDiagrams('steel-diagram-canvas', L, w, supportType);
-        } else {
-            const canvas = document.getElementById('steel-diagram-canvas');
-            canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-        }
+            if (MuLim_kNm >= MuReq) {
+                isSafe = true;
+                if (term < 1 && term >= 0) {
+                     AstReq = (0.5 * fck / fy) * b * d * (1 - Math.sqrt(1 - term));
+                } else {
+                     AstReq = 0; 
+                }
+            }
+            
+            // --- Safety Check (Flexure) ---
+            const flexureStatus = isSafe ? 'Safe' : 'Unsafe (Flexure)';
+            
+            // --- Output Display Updates ---
+            document.getElementById('effectiveDepthOutput').textContent = `${d.toFixed(1)} mm`;
+            document.getElementById('RuLimOutput').textContent = `${RuLim.toFixed(3)}`;
+            document.getElementById('MuLimOutput').textContent = `${MuLim_kNm.toFixed(2)} kNm`;
+            document.getElementById('AstRequiredOutput').textContent = isSafe && !isNaN(AstReq) ? 
+                `${AstReq.toFixed(2)} mm²` : 
+                `Requires Doubly Reinforced Section`;
 
-        if (L <= 0 || w < 0 || fy <= 0 || Zp_cm3 <= 0 || h_mm <= 0 || tw_mm <= 0 || beta_b <= 0) {
-             document.getElementById('steel-wu').textContent = `- kN/m`;
-             document.getElementById('steel-Mu').textContent = `- kNm`;
-             document.getElementById('steel-Vu').textContent = `- kN`;
-             document.getElementById('steel-Md').textContent = `- kNm`;
-             document.getElementById('steel-Vd').textContent = `- kN`;
-             document.getElementById('steel-final-summary').className = 'result-box bg-gray-200';
-             document.getElementById('steel-final-summary').textContent = 'Please enter valid section properties and loads.';
-            return;
-        }
+            const flexureResultDiv = document.getElementById('flexureResult');
+            flexureResultDiv.classList.remove('safe', 'unsafe');
+            flexureResultDiv.classList.add(isSafe ? 'safe' : 'unsafe');
 
-        const wu = w * ULS_LOAD_FACTOR;
-        const { M_max: Mu, V_max: Vu } = calculateBeamForces(L, wu, supportType); 
-        
-        updateOutput('steel-wu', wu, 'kN/m');
-        updateOutput('steel-Mu', Mu, 'kNm');
-        updateOutput('steel-Vu', Vu, 'kN');
 
-        // 2. Moment Capacity (Cl. 8.2.1.2)
-        const Zp_mm3 = Zp_cm3 * 1e3;
-        const Md_Nmm = (beta_b * Zp_mm3 * fy) / STEEL_GAMMA_M0;
-        const Md_kNm = Md_Nmm / 1e6;
-        
-        const momentCheckPass = Mu <= Md_kNm;
-        const momentCheckMsg = momentCheckPass ? `Required M<sub>u</sub> (${Mu.toFixed(2)} kNm) &le; M<sub>d</sub> (${Md_kNm.toFixed(2)} kNm).` : `FAILURE: Required M<sub>u</sub> (${Mu.toFixed(2)} kNm) > M<sub>d</sub> (${Md_kNm.toFixed(2)} kNm).`;
-        updateOutput('steel-Md', Md_kNm, 'kNm');
-        updateStatus('steel-moment-check-status', momentCheckPass, momentCheckMsg);
+            // --- Final Status Summary Update ---
+            const statusSummary = document.getElementById('statusSummary');
+            const statusTitle = document.getElementById('statusTitle');
+            const statusMessage = document.getElementById('statusMessage');
+            const statusComparison = document.getElementById('statusComparison');
 
-        // 3. Shear Capacity (Cl. 8.4.1)
-        const Av_mm2 = h_mm * tw_mm;
-        const Vd_N = Av_mm2 * (fy / Math.sqrt(3)) / STEEL_GAMMA_M0;
-        const Vd_kN = Vd_N / 1e3;
+            statusSummary.classList.remove('safe', 'unsafe', 'border-2', 'border-dashed');
+            statusSummary.classList.add(isSafe ? 'safe' : 'unsafe');
 
-        const shearCheckPass = Vu <= Vd_kN;
-        const shearCheckMsg = shearCheckPass ? `Required V<sub>u</sub> (${Vu.toFixed(2)} kN) &le; V<sub>d</sub> (${Vd_kN.toFixed(2)} kN).` : `FAILURE: Required V<sub>u</sub> (${Vu.toFixed(2)} kN) > V<sub>d</sub> (${Vd_kN.toFixed(2)} kN).`;
-        updateOutput('steel-Vd', Vd_kN, 'kN');
-        updateStatus('steel-shear-check-status', shearCheckPass, shearCheckMsg);
+            statusTitle.textContent = isSafe ? 'DESIGN IS SAFE' : 'DESIGN IS UNSAFE';
+            statusMessage.textContent = isSafe ? 
+                'The beam has adequate Flexural Capacity (M_u, lim >= M_u, req).' : 
+                'Flexural Capacity is INSUFFICIENT! (M_u, lim < M_u, req).';
+            
+            statusComparison.textContent = isSafe ?
+                `Required ${MuReq.toFixed(2)} kNm vs. Capacity ${MuLim_kNm.toFixed(2)} kNm` :
+                `Required ${MuReq.toFixed(2)} kNm > Capacity ${MuLim_kNm.toFixed(2)} kNm`;
 
-        // 4. Final Summary
-        const finalSummaryEl = document.getElementById('steel-final-summary');
-        if (momentCheckPass && shearCheckPass) {
-            finalSummaryEl.innerHTML = 'SECTION IS SUITABLE (PASSES M<sub>u</sub> & V<sub>u</sub> Checks)';
-            finalSummaryEl.classList.remove('compliance-fail', 'bg-gray-200');
-            finalSummaryEl.classList.add('compliance-pass');
-        } else {
-            finalSummaryEl.innerHTML = 'SECTION IS UNSUITABLE (FAILURES PRESENT)';
-            finalSummaryEl.classList.remove('compliance-pass', 'bg-gray-200');
-            finalSummaryEl.classList.add('compliance-fail');
-        }
-    }
-    
-    // --- Material Estimation Logic (NEW) ---
+            if (messageBox.innerHTML === '') {
+                 messageBox.innerHTML = createMessage(`Flexural check completed. Status: ${flexureStatus}.`, isSafe ? 'success' : 'error');
+            }
 
-    function runEstimation() {
-        const { L, B, D, grade, steelPercent } = getEstimationInputs();
+            
+            // --- Save to Firestore ---
+            const designData = {
+                span: span.toFixed(2),
+                depth: D.toFixed(0),
+                width: b.toFixed(0),
+                fck: fck.toFixed(0),
+                fy: fy,
+                momentRequired: MuReq.toFixed(2),
+                shearRequired: VuReq.toFixed(2),
+                astProvided: AstProv.toFixed(2),
+                muLim: MuLim_kNm.toFixed(2),
+                astRequired: isSafe ? AstReq.toFixed(2) : 'DOUBLY REINFORCED',
+                status: flexureStatus
+            };
+            window.saveDesignToFirestore(designData);
 
-        if (L <= 0 || B <= 0 || D <= 0 || steelPercent < 0) {
-            document.getElementById('est-Vwet').textContent = '0.00 m³';
-            document.getElementById('est-cement-bags').textContent = '0.0 bags';
-            document.getElementById('est-cement-mass').textContent = '(0.00 kg)';
-            document.getElementById('est-sand').textContent = '0.00 m³';
-            document.getElementById('est-aggregate').textContent = '0.00 m³';
-            document.getElementById('est-steel-weight').textContent = '0.00 kg';
-            document.getElementById('est-steel-volume').textContent = '(0.00 m³)';
-            document.getElementById('est-mix-ratio').textContent = 'Please enter valid dimensions.';
-            return;
+            // --- Update Diagrams ---
+            drawDiagrams(span, MuReq, VuReq);
+            updateDiagramLabels(span, MuReq, VuReq);
         }
 
-        // 1. Calculate Wet Volume (m³)
-        const V_wet = L * B * D;
+        // --- Three.js Diagram Logic ---
 
-        // 2. Get Mix Ratios and Sum
-        const mix = MIX_RATIOS[grade];
-        const mixSum = mix.reduce((a, b) => a + b, 0);
+        function initCanvas() {
+            // Scene setup
+            scene = new THREE.Scene();
+            
+            const width = canvasContainer.clientWidth;
+            const height = canvasContainer.clientHeight;
+            
+            // Camera (Orthographic for 2D diagrams)
+            camera = new THREE.OrthographicCamera(width / - 2, width / 2, height / 2, height / - 2, 1, 1000);
+            camera.position.z = 5; 
 
-        // 3. Calculate Dry Volume
-        const V_dry = V_wet * DRY_VOLUME_FACTOR;
-        
-        // 4. Calculate Material Volumes
-        const V_cement = V_dry * (mix[0] / mixSum);
-        const V_sand = V_dry * (mix[1] / mixSum);
-        const V_aggregate = V_dry * (mix[2] / mixSum);
-        
-        // 5. Convert Cement Volume to Mass and Bags
-        const M_cement_kg = V_cement * CEMENT_DENSITY_KG_M3;
-        const N_cement_bags = M_cement_kg / CEMENT_BAG_KG;
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(width, height);
+            // Append the renderer canvas directly to the container, not the overlay
+            canvasContainer.appendChild(renderer.domElement);
+            isRendererInitialized = true;
 
-        // 6. Calculate Steel Weight (Based on % of Wet Volume)
-        const V_steel = V_wet * (steelPercent / 100);
-        const M_steel_kg = V_steel * STEEL_DENSITY_KG_M3;
-        
-        // --- Update Outputs ---
-        document.getElementById('est-Vwet').textContent = `${V_wet.toFixed(3)} m³`;
-        
-        document.getElementById('est-cement-bags').textContent = `${N_cement_bags.toFixed(1)} bags`;
-        document.getElementById('est-cement-mass').textContent = `(${M_cement_kg.toFixed(2)} kg)`;
-        
-        document.getElementById('est-sand').textContent = `${V_sand.toFixed(3)} m³`;
-        document.getElementById('est-aggregate').textContent = `${V_aggregate.toFixed(3)} m³`;
+            // Light
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            scene.add(ambientLight);
 
-        document.getElementById('est-steel-weight').textContent = `${M_steel_kg.toFixed(2)} kg`;
-        document.getElementById('est-steel-volume').textContent = `(${V_steel.toFixed(3)} m³)`;
-        
-        document.getElementById('est-mix-ratio').textContent = `${grade} (${mix[0]}:${mix[1]}:${mix[2]})`;
-    }
+            window.addEventListener('resize', onWindowResize, false);
+
+            addBeamOutline(width, height);
+            
+            renderer.render(scene, camera);
+            
+            window.runInitialCalculationIfReady(); 
+            setCurrentDiagram('BMD'); // Initialize toggle state
+        }
+
+        function onWindowResize() {
+            if (!isRendererInitialized) return;
+
+            const width = canvasContainer.clientWidth;
+            const height = canvasContainer.clientHeight;
+
+            camera.left = width / - 2;
+            camera.right = width / 2;
+            camera.top = height / 2;
+            camera.bottom = height / - 2;
+            camera.updateProjectionMatrix();
+
+            renderer.setSize(width, height);
+            
+            addBeamOutline(width, height);
+            const span = parseFloat(document.getElementById('spanInput').value) || 5;
+            const MuReq = parseFloat(document.getElementById('muInput').value) || 75;
+            const VuReq = parseFloat(document.getElementById('vuInput').value) || 50;
+            drawDiagrams(span, MuReq, VuReq);
+            updateDiagramLabels(span, MuReq, VuReq);
+            renderer.render(scene, camera);
+        }
+
+        function addBeamOutline(width, height) {
+            scene.children = scene.children.filter(obj => obj.name !== 'BeamOutline' && obj.name !== 'Axes' && obj.name !== 'SupportLeft' && obj.name !== 'SupportRight');
+
+            const beamLength = width * 0.8; 
+            const beamHeight = 20; 
+            const yOffset = -50; 
+
+            // 1. Beam Line (Box representing beam section)
+            const beamGeometry = new THREE.BoxGeometry(beamLength, beamHeight, 1);
+            const beamMaterial = new THREE.MeshBasicMaterial({ color: 0x505081, transparent: true, opacity: 0.5 });
+            beamMesh = new THREE.Mesh(beamGeometry, beamMaterial);
+            beamMesh.position.y = yOffset;
+            beamMesh.name = 'BeamOutline';
+            scene.add(beamMesh);
+
+            // 2. Axes (Reference Line)
+            const axesGeometry = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(-beamLength / 2, yOffset, 1),
+                new THREE.Vector3(beamLength / 2, yOffset, 1)
+            ]);
+            axes = new THREE.Line(axesGeometry, new THREE.LineBasicMaterial({ color: 0x8686AC })); 
+            axes.name = 'Axes';
+            scene.add(axes);
+
+            // 3. Supports (Triangles)
+            const supportGeometry = new THREE.ShapeGeometry(new THREE.Shape([
+                new THREE.Vector2(-15, 0),
+                new THREE.Vector2(15, 0),
+                new THREE.Vector2(0, -20)
+            ]));
+            const supportMaterial = new THREE.MeshBasicMaterial({ color: 0x8686AC });
+
+            const supportLeft = new THREE.Mesh(supportGeometry, supportMaterial);
+            supportLeft.position.set(-beamLength / 2, yOffset - beamHeight / 2 - 2, 1);
+            supportLeft.name = 'SupportLeft';
+            scene.add(supportLeft);
+
+            const supportRight = new THREE.Mesh(supportGeometry, supportMaterial);
+            supportRight.position.set(beamLength / 2, yOffset - beamHeight / 2 - 2, 1);
+            supportRight.name = 'SupportRight';
+            scene.add(supportRight);
+
+            renderer.render(scene, camera);
+        }
+
+        function updateDiagramLabels(span, MuReq, VuReq) {
+            if (typeof katex === 'undefined') return;
+
+            const VmaxLabel = VuReq.toFixed(2);
+            const MmaxLabel = MuReq.toFixed(2);
+
+            // Get the element and update its LaTeX content and text
+            const updateLabel = (id, value) => {
+                const el = document.getElementById(id);
+                const latexTemplate = el.getAttribute('data-latex');
+                
+                if (!latexTemplate) return;
+
+                // Replace the {{VALUE}} placeholder with the actual value
+                const newLatex = latexTemplate.replace(/\{\{VALUE\}\}/g, value);
+                let colorHex = '#8686AC'; // Default color
+                if (id === 'labelMmax') colorHex = '#F87171'; // Red for BMD
+                if (id === 'labelVmaxLeft' || id === 'labelVmaxRight') colorHex = '#8686AC'; // Secondary Accent for SFD
 
 
-    // --- Tab Switching Logic ---
-    function switchTab(activeTabId, runFunction) {
-        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
-        document.getElementById(activeTabId).classList.remove('hidden');
+                try {
+                    const coloredLatex = `\\color{${colorHex}}{${newLatex}}`;
+                    katex.render(coloredLatex, el, {
+                        throwOnError: false,
+                        displayMode: false 
+                    });
+                } catch(e) {
+                    console.error(`Error rendering KaTeX for ${id}:`, e);
+                }
+                
+                // Set visibility based on current diagram
+                if (id === 'labelMmax') {
+                    el.style.display = currentDiagram === 'BMD' ? 'block' : 'none';
+                } else if (id === 'labelVmaxLeft' || id === 'labelVmaxRight') {
+                    el.style.display = currentDiagram === 'SFD' ? 'block' : 'none';
+                } else if (id === 'labelSpan') {
+                    // Span label is plain text (not rendered with KaTeX)
+                    el.textContent = `Span (L) = ${span.toFixed(2)} m`; 
+                    el.style.display = 'block';
+                }
+            };
 
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            const targetId = btn.onclick.toString().match(/'([^']+)'/)[1];
-            btn.classList.toggle('tab-active', targetId === activeTabId);
-            btn.classList.toggle('tab-inactive', targetId !== activeTabId);
+            updateLabel('labelVmaxLeft', VmaxLabel);
+            updateLabel('labelVmaxRight', VmaxLabel);
+            updateLabel('labelMmax', MmaxLabel);
+
+            // Span label is plain text
+            document.getElementById('labelSpan').textContent = `Span (L) = ${span.toFixed(2)} m`;
+        }
+
+
+        function drawDiagrams(span, MuReq, VuReq) {
+            if (!scene || !isRendererInitialized) {
+                return; 
+            }
+            
+            // Clear existing curves
+            scene.children = scene.children.filter(obj => obj.name !== 'SFDCurve' && obj.name !== 'BMDCurve');
+
+            const width = canvasContainer.clientWidth;
+            const beamLength = width * 0.8;
+            const diagramHeight = 150; // Max height for the diagrams
+            const yOffset = -50; // Y position of the beam (zero axis)
+            
+            // Ensure inputs are positive for scaling
+            const VuMax = Math.max(VuReq, 10); // Min 10 kN for visual stability
+            const MuMax = Math.max(MuReq, 10); // Min 10 kNm for visual stability
+
+            // Use a higher scale factor for better visual impact
+            const diagramScaleFactor = 0.7; 
+
+            // SFD (Linear from +VuMax to -VuMax)
+            const sfdPoints = [];
+            const sfdScaleFactor = (diagramHeight * diagramScaleFactor) / VuMax;
+            
+            sfdPoints.push(new THREE.Vector3(-beamLength / 2, yOffset + VuMax * sfdScaleFactor, 2)); 
+            sfdPoints.push(new THREE.Vector3(-beamLength / 2 + 1, yOffset + VuMax * sfdScaleFactor, 2)); // Start flat
+            sfdPoints.push(new THREE.Vector3(beamLength / 2 - 1, yOffset - VuMax * sfdScaleFactor, 2)); // End flat
+            sfdPoints.push(new THREE.Vector3(beamLength / 2, yOffset - VuMax * sfdScaleFactor, 2)); 
+
+            const sfdGeometry = new THREE.BufferGeometry().setFromPoints(sfdPoints);
+            sfdCurve = new THREE.Line(sfdGeometry, new THREE.LineBasicMaterial({ color: 0x8686AC, linewidth: 3 })); // Secondary Accent Color
+            sfdCurve.name = 'SFDCurve';
+            scene.add(sfdCurve);
+            sfdCurve.visible = (currentDiagram === 'SFD');
+
+
+            // BMD (Parabolic, Max MuMax at center, below axis for positive moment SS beam)
+            const bmdPoints = [];
+            const numSegments = 50;
+            const bmdScaleFactor = (diagramHeight * diagramScaleFactor) / MuMax;
+
+            for (let i = 0; i <= numSegments; i++) {
+                const xNorm = i / numSegments; 
+                const xCoord = -beamLength / 2 + xNorm * beamLength;
+
+                // Parabolic function: max value is 1 at x_norm=0.5.
+                const yNorm = xNorm * (1 - xNorm) * 4;
+
+                // Position below the axis (yOffset - scaled yNorm)
+                const yCoord = yOffset - (yNorm * MuMax * bmdScaleFactor);
+                
+                bmdPoints.push(new THREE.Vector3(xCoord, yCoord, 2));
+            }
+
+            const bmdGeometry = new THREE.BufferGeometry().setFromPoints(bmdPoints);
+            bmdCurve = new THREE.Line(bmdGeometry, new THREE.LineBasicMaterial({ color: 0xF87171, linewidth: 3 })); // Red (Tailwind's red-400 for contrast)
+            bmdCurve.name = 'BMDCurve';
+            scene.add(bmdCurve);
+            bmdCurve.visible = (currentDiagram === 'BMD');
+
+            // Final visibility set based on current state
+            sfdCurve.visible = (currentDiagram === 'SFD');
+            bmdCurve.visible = (currentDiagram === 'BMD');
+            
+            renderer.render(scene, camera);
+        }
+
+        // --- Tab Switching Logic ---
+        function switchTab(tabId) {
+            // Hide all tab content
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            // Deactivate all buttons
+            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+
+            // Show the selected tab content
+            const contentId = `content${tabId.charAt(0).toUpperCase() + tabId.slice(1)}`;
+            document.getElementById(contentId).classList.remove('hidden');
+            // Activate the selected button
+            document.getElementById(`tab${tabId.charAt(0).toUpperCase() + tabId.slice(1)}`).classList.add('active');
+
+            // Specific actions for the Diagrams tab
+            if (tabId === 'diagrams') {
+                onWindowResize(); // Force resize to ensure canvas fits container and redraws
+                setCurrentDiagram(currentDiagram); // Ensure correct diagram is visible and labels update
+            }
+        }
+
+        // --- Initial Load Event Listeners ---
+        window.addEventListener('load', () => {
+            document.getElementById('designForm').addEventListener('change', window.calculateDesign);
+            document.getElementById('designForm').addEventListener('input', window.calculateDesign);
         });
-        
-        // Toggle input visibility
-        document.getElementById('rcc-inputs').classList.toggle('hidden', activeTabId !== 'rcc-tab-content');
-        document.getElementById('steel-inputs').classList.toggle('hidden', activeTabId !== 'steel-tab-content');
-        document.getElementById('estimation-inputs').classList.toggle('hidden', activeTabId !== 'estimation-tab-content');
 
-        // Run initial check for the active tab
-        if (typeof window[runFunction] === 'function') {
-            window[runFunction]();
-        }
-    }
-
-    // --- Event Listener Setup ---
-    function attachListeners(formId, runFunction) {
-        document.querySelectorAll(`#${formId} input, #${formId} select`).forEach(el => {
-            el.addEventListener('input', runFunction);
-            el.addEventListener('change', runFunction); 
-        });
-    }
-
-    // Initial setup
-    document.addEventListener('DOMContentLoaded', () => {
-        // Attach listeners for all forms
-        attachListeners('rcc-form', runRCCDesign);
-        attachListeners('steel-form', runSteelDesign);
-        attachListeners('estimation-form', runEstimation); // NEW LISTENER
-        
-        // Run the default tab (RCC)
-        runRCCDesign();
-        switchTab('rcc-tab-content', 'runRCCDesign');
-    });
-</script>
-</body></html>
+    </script>
+</body>
+</html>
