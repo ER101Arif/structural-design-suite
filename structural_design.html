@@ -1,0 +1,740 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Integrated Structural Design Suite (IS 456 & IS 800 & Estimation)</title><script src="https://www.google.com/search?q=https://cdn.tailwindcss.com"></script><style>@import url('https://www.google.com/search?q=https://fonts.googleapis.com/css2%3Ffamily%3DInter:wght%40400%3B500%3B600%3B700%26display%3Dswap');body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #334155; }.card { background-color: white; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }.compliance-pass { background-color: #d1fae5; color: #065f46; }.compliance-fail { background-color: #fee2e2; color: #991b1b; }.result-box { padding: 1rem; border-radius: 0.5rem; text-align: center; }.tab-btn { padding: 0.75rem 1.5rem; cursor: pointer; border-radius: 0.5rem 0.5rem 0 0; font-weight: 600; transition: background-color 0.3s; }.tab-active { background-color: white; color: #4f46e5; border-bottom: 2px solid #4f46e5; }.tab-inactive { background-color: #e2e8f0; color: #475569; }canvas { border: 1px solid #ccc; background-color: #ffffff; margin: 0 auto; display: block; border-radius: 0.5rem; }</style></head><body class="p-4 sm:p-6 md:p-8"><main class="max-w-7xl mx-auto"><header class="text-center mb-10"><h1 class="text-3xl sm:text-4xl font-bold text-slate-800">Integrated Structural Engineering Suite</h1><p class="mt-2 text-lg text-slate-600">Design Checks (IS 456 & 800) & Material Estimation</p></header>    <!-- Tabs Navigation -->
+    <div class="flex border-b border-gray-200 mb-6 overflow-x-auto">
+        <button class="tab-btn tab-active" onclick="switchTab('rcc-tab-content', 'runRCCDesign')">RCC Beam Design (IS 456)</button>
+        <button class="tab-btn tab-inactive" onclick="switchTab('steel-tab-content', 'runSteelDesign')">Steel Beam Check (IS 800)</button>
+        <button class="tab-btn tab-inactive" onclick="switchTab('estimation-tab-content', 'runEstimation')">Material Estimation (IS 456)</button>
+    </div>
+
+    <!-- Design Content -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        
+        <!-- Left Column: Unified Inputs for Active Tab -->
+        <div class="lg:col-span-1 space-y-6">
+            
+            <!-- RCC Inputs (IS 456) -->
+            <div id="rcc-inputs" class="card p-6">
+                <h2 class="text-xl font-bold text-slate-700 mb-4 border-b pb-2">1. IS 456 Inputs (RCC)</h2>
+                <form id="rcc-form" class="space-y-4">
+                    <h3 class="font-semibold text-slate-600 mb-2 mt-4">Geometry & Materials</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="block text-sm">Width (b, mm)</label><input type="number" id="rcc-b" value="300" class="w-full p-2 border rounded-md" placeholder="mm"></div>
+                        <div><label class="block text-sm">Depth (D, mm)</label><input type="number" id="rcc-D" value="600" class="w-full p-2 border rounded-md" placeholder="mm"></div>
+                        <div><label class="block text-sm">Cover (mm)</label><input type="number" id="rcc-cover" value="50" class="w-full p-2 border rounded-md" placeholder="mm"></div>
+                        <div><label class="block text-sm">Bar Dia. (&#x3c6;)</label><select id="rcc-barDia" class="w-full p-2 border rounded-md"><option value="16" selected>16 mm</option><option value="20">20 mm</option></select></div>
+                        <div><label class="block text-sm">Concrete (f<sub>ck</sub>)</label><select id="rcc-fck" class="w-full p-2 border rounded-md"><option value="25" selected>M25</option><option value="30">M30</option></select></div>
+                        <div><label class="block text-sm">Steel (f<sub>y</sub>)</label><select id="rcc-fy" class="w-full p-2 border rounded-md"><option value="415" selected>Fe 415</option><option value="500">Fe 500</option></select></div>
+                    </div>
+                    <h3 class="font-semibold text-slate-600 mb-2 mt-4 border-t pt-4">Loads & Support Conditions</h3>
+                    <div>
+                        <label class="block text-sm">Support Condition</label>
+                        <select id="rcc-support" class="w-full p-2 border rounded-md">
+                            <option value="simply_supported">Simply Supported (UDL)</option>
+                            <option value="cantilever">Cantilever (UDL)</option>
+                        </select>
+                    </div>
+                    <div><label class="block text-sm">Span (L, m)</label><input type="number" id="rcc-L" value="5" class="w-full p-2 border rounded-md"></div>
+                    <div><label class="block text-sm">Service UDL (w, kN/m)</label><input type="number" id="rcc-w" value="30" class="w-full p-2 border rounded-md"></div>
+                    <button type="button" onclick="runRCCDesign()" class="w-full bg-indigo-600 text-white font-bold py-2 rounded-lg hover:bg-indigo-700 transition duration-300 mt-4">
+                        Run RCC Design
+                    </button>
+                </form>
+            </div>
+
+            <!-- Steel Inputs (IS 800) -->
+            <div id="steel-inputs" class="card p-6 hidden">
+                <h2 class="text-xl font-bold text-slate-700 mb-4 border-b pb-2">1. IS 800 Inputs (Steel)</h2>
+                <form id="steel-form" class="space-y-4">
+                    <h3 class="font-semibold text-slate-600 mb-2 mt-4">Loads & Support Conditions</h3>
+                    <div>
+                        <label class="block text-sm">Support Condition</label>
+                        <select id="steel-support" class="w-full p-2 border rounded-md">
+                            <option value="simply_supported">Simply Supported (UDL)</option>
+                            <option value="cantilever">Cantilever (UDL)</option>
+                        </select>
+                    </div>
+                    <div><label class="block text-sm">Span (L, m)</label><input type="number" id="steel-L" value="6.0" class="w-full p-2 border rounded-md"></div>
+                    <div><label class="block text-sm">Service UDL (w, kN/m)</label><input type="number" id="steel-w" value="15" class="w-full p-2 border rounded-md"></div>
+                    <h3 class="font-semibold text-slate-600 mb-2 mt-4 border-t pt-4">Section & Material Properties</h3>
+                    <div><label class="block text-sm">Yield Strength (f<sub>y</sub>, MPa)</label><select id="steel-fy" class="w-full p-2 border rounded-md"><option value="250" selected>Fe 250</option><option value="350">Fe 350</option></select></div>
+                    <div><label class="block text-sm">Plastic Modulus (Z<sub>p</sub>, cm³)</label><input type="number" id="steel-Zp" value="1200" class="w-full p-2 border rounded-md"></div>
+                    <div><label class="block text-sm">Web Depth (h, mm)</label><input type="number" id="steel-h" value="300" class="w-full p-2 border rounded-md"></div>
+                    <div><label class="block text-sm">Web Thickness (t<sub>w</sub>, mm)</label><input type="number" id="steel-tw" value="8.0" step="0.5" class="w-full p-2 border rounded-md"></div>
+                    <div><label class="block text-sm">Classification (&beta;<sub>b</sub>)</label><select id="steel-beta_b" class="w-full p-2 border rounded-md"><option value="1.0" selected>Compact (1.0)</option><option value="0.7">Semi-Compact (0.7)</option></select></div>
+                    <button type="button" onclick="runSteelDesign()" class="w-full bg-teal-600 text-white font-bold py-2 rounded-lg hover:bg-teal-700 transition duration-300 mt-4">
+                        Run Steel Check
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Estimation Inputs (IS 456) -->
+            <div id="estimation-inputs" class="card p-6 hidden">
+                <h2 class="text-xl font-bold text-slate-700 mb-4 border-b pb-2">1. Estimation Inputs (IS 456)</h2>
+                <form id="estimation-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm">Element Type</label>
+                        <select id="est-element" class="w-full p-2 border rounded-md">
+                            <option value="beam">Beam</option>
+                            <option value="slab">Slab</option>
+                            <option value="column">Column</option>
+                            <option value="foundation">Foundation</option>
+                        </select>
+                    </div>
+                    <h3 class="font-semibold text-slate-600 mb-2 mt-4">Geometry (in meters)</h3>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div><label class="block text-sm">Length (L)</label><input type="number" id="est-L" value="5.0" step="0.1" class="w-full p-2 border rounded-md" placeholder="m"></div>
+                        <div><label class="block text-sm">Width (B)</label><input type="number" id="est-B" value="0.3" step="0.01" class="w-full p-2 border rounded-md" placeholder="m"></div>
+                        <div><label class="block text-sm">Depth (D)</label><input type="number" id="est-D" value="0.6" step="0.01" class="w-full p-2 border rounded-md" placeholder="m"></div>
+                    </div>
+                    <h3 class="font-semibold text-slate-600 mb-2 mt-4 border-t pt-4">Concrete & Steel Details</h3>
+                    <div>
+                        <label class="block text-sm">Concrete Grade (Mix Ratio)</label>
+                        <select id="est-grade" class="w-full p-2 border rounded-md">
+                            <option value="M25" selected>M25 (1:1:2 Nominal Mix)</option>
+                            <option value="M20">M20 (1:1.5:3 Nominal Mix)</option>
+                            <option value="M15">M15 (1:2:4 Nominal Mix)</option>
+                            <option value="M10">M10 (1:3:6 Nominal Mix)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm">Steel Reinforcement (%)</label>
+                        <input type="number" id="est-steel-percent" value="1.5" step="0.1" min="0.5" max="4.0" class="w-full p-2 border rounded-md" placeholder="e.g., 1.5%">
+                        <p class="text-xs text-slate-500 mt-1">Typical range for beams: 1.0% - 2.0%</p>
+                    </div>
+                    <button type="button" onclick="runEstimation()" class="w-full bg-orange-600 text-white font-bold py-2 rounded-lg hover:bg-orange-700 transition duration-300 mt-4">
+                        Calculate Materials
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Right Column: Tabbed Results -->
+        <div class="lg:col-span-2 space-y-8">
+            
+            <!-- RCC Results (IS 456) -->
+            <div id="rcc-tab-content" class="tab-content">
+                <div class="card p-6">
+                    <h2 class="text-xl font-bold text-slate-700 mb-4 border-b pb-2">Analysis Visualization (Service Load)</h2>
+                    <canvas id="rcc-diagram-canvas" width="600" height="300" class="w-full max-w-full"></canvas>
+                    <p class="text-sm text-slate-500 mt-2 text-center">Shear Force Diagram (SFD) is above the beam, Bending Moment Diagram (BMD) is below.</p>
+                </div>
+
+                <div class="card p-6 mt-6">
+                    <h2 class="text-xl font-bold text-slate-700 mb-4 border-b pb-2">RCC Design Results (IS 456: M<sub>u</sub> Check & A<sub>st</sub> Calculation)</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                        <div class="bg-gray-100 p-4 rounded-lg"><p class="text-sm text-slate-500">Max Service Moment (M<sub>service</sub>)</p><p id="rcc-Mservice" class="text-2xl font-bold text-slate-800">- kNm</p></div>
+                        <div class="bg-violet-100 p-4 rounded-lg"><p class="text-sm text-slate-500">Factored Design Moment (M<sub>u</sub>)</p><p id="rcc-Mu" class="text-3xl font-bold text-violet-700">- kNm</p></div>
+                        <div class="bg-teal-50 p-4 rounded-lg"><p class="text-sm text-slate-500">Limiting Moment (M<sub>u, lim</sub>)</p><p id="rcc-Mulim" class="text-2xl font-bold text-teal-700">- kNm</p></div>
+                    </div>
+                    
+                    <div id="rcc-design-status" class="result-box mt-4 font-semibold text-lg flex items-center justify-center">
+                        Run design to check section adequacy.
+                    </div>
+                </div>
+
+                <div class="card p-6 mt-6">
+                    <h2 class="text-xl font-bold text-slate-700 mb-4 border-b pb-2">Reinforcement Schedule & Compliance</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="bg-slate-50 p-4 rounded-lg text-center"><p class="text-sm text-slate-500">Required Steel (A<sub>st, reqd</sub>)</p><p id="rcc-Ast-req" class="text-2xl font-bold text-slate-800">- mm²</p></div>
+                        <div class="bg-green-100 p-4 rounded-lg text-center"><p class="text-sm text-slate-500">Provided Steel (A<sub>st, prov</sub>)</p><p id="rcc-Ast-prov" class="text-2xl font-bold text-green-700">- mm²</p></div>
+                        <div class="bg-violet-100 p-4 rounded-lg text-center"><p class="text-sm text-slate-500">Bars Provided (Dia. <span id="rcc-barDia-out">16</span>mm)</p><p id="rcc-Num-bars" class="text-3xl font-bold text-violet-700">- nos.</p></div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t">
+                        <h3 class="font-semibold text-slate-700 mb-2">IS 456 Limits Check (Cl. 26.5.1)</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div id="rcc-min-check-status" class="result-box bg-gray-50 text-left text-sm">Min Steel (A<sub>st, min</sub>): - mm²</div>
+                            <div id="rcc-max-check-status" class="result-box bg-gray-50 text-left text-sm">Max Steel (A<sub>st, max</sub>): - mm²</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Steel Results (IS 800) -->
+            <div id="steel-tab-content" class="tab-content hidden">
+                
+                 <div class="card p-6">
+                    <h2 class="text-xl font-bold text-slate-700 mb-4 border-b pb-2">Analysis Visualization (Service Load)</h2>
+                    <canvas id="steel-diagram-canvas" width="600" height="300" class="w-full max-w-full"></canvas>
+                    <p class="text-sm text-slate-500 mt-2 text-center">Shear Force Diagram (SFD) is above the beam, Bending Moment Diagram (BMD) is below.</p>
+                </div>
+
+                <div class="card p-6 mt-6">
+                    <h2 class="text-xl font-bold text-slate-700 mb-4 border-b pb-2">Steel Analysis Results (Ultimate Limit State)</h2>
+                    <p class="text-sm text-slate-600 mb-4">Loads factored by 1.5 for ultimate limit state design.</p>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                        <div class="bg-violet-100 p-4 rounded-lg"><p class="text-sm text-slate-500">Ultimate UDL (w<sub>u</sub>)</p><p id="steel-wu" class="text-2xl font-bold text-violet-700">- kN/m</p></div>
+                        <div class="bg-gray-100 p-4 rounded-lg"><p class="text-sm text-slate-500">Max Ultimate Moment (M<sub>u</sub>)</p><p id="steel-Mu" class="text-2xl font-bold text-slate-800">- kNm</p></div>
+                        <div class="bg-gray-100 p-4 rounded-lg"><p class="text-sm text-slate-500">Max Ultimate Shear (V<sub>u</sub>)</p><p id="steel-Vu" class="text-2xl font-bold text-slate-800">- kN</p></div>
+                    </div>
+                </div>
+
+                <div class="card p-6 mt-6">
+                    <h2 class="text-xl font-bold text-slate-700 mb-4 border-b pb-2">Section Capacity Check (IS 800: Cl. 8 & 6)</h2>
+                    
+                    <!-- Moment Capacity Check -->
+                    <div class="border p-4 rounded-lg mb-4">
+                        <h3 class="font-semibold text-lg mb-2">1. Moment Capacity (M<sub>d</sub>)</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div class="result-box bg-teal-50"><p class="text-sm text-slate-500">Design Moment (M<sub>d</sub>)</p><p id="steel-Md" class="text-xl font-bold text-teal-700">- kNm</p></div>
+                            <div class="result-box bg-gray-50 col-span-2" id="steel-moment-check-status"><p class="font-bold text-lg">-</p></div>
+                        </div>
+                    </div>
+
+                    <!-- Shear Capacity Check -->
+                    <div class="border p-4 rounded-lg">
+                        <h3 class="font-semibold text-lg mb-2">2. Shear Capacity (V<sub>d</sub>)</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div class="result-box bg-teal-50"><p class="text-sm text-slate-500">Design Shear (V<sub>d</sub>)</p><p id="steel-Vd" class="text-xl font-bold text-teal-700">- kN</p></div>
+                            <div class="result-box bg-gray-50 col-span-2" id="steel-shear-check-status"><p class="font-bold text-lg">-</p></div>
+                        </div>
+                    </div>
+
+                    <!-- Final Summary -->
+                    <div class="mt-6 pt-4 border-t-2">
+                         <h3 class="font-semibold text-xl mb-2 text-center text-slate-700">Overall Section Suitability</h3>
+                        <div class="result-box" id="steel-final-summary">
+                            <p class="font-bold text-2xl">-</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Estimation Results -->
+            <div id="estimation-tab-content" class="tab-content hidden">
+                <div class="card p-6">
+                    <h2 class="text-xl font-bold text-slate-700 mb-4 border-b pb-2">Material Estimation Summary (IS 456 Basis)</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
+                        <div class="bg-slate-100 p-4 rounded-lg col-span-full">
+                            <p class="text-sm text-slate-500">Total Wet Concrete Volume</p>
+                            <p id="est-Vwet" class="text-3xl font-bold text-slate-800">0.00 m³</p>
+                        </div>
+                        <!-- Cement -->
+                        <div class="bg-red-50 p-4 rounded-lg">
+                            <p class="text-sm text-slate-500">Cement Required</p>
+                            <p id="est-cement-bags" class="text-2xl font-bold text-red-700">0.0 bags</p>
+                            <p id="est-cement-mass" class="text-sm text-slate-600 mt-1">(0.00 kg)</p>
+                        </div>
+                        <!-- Sand -->
+                        <div class="bg-yellow-50 p-4 rounded-lg">
+                            <p class="text-sm text-slate-500">Sand Required (Fine Aggregate)</p>
+                            <p id="est-sand" class="text-2xl font-bold text-yellow-700">0.00 m³</p>
+                        </div>
+                        <!-- Aggregate -->
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <p class="text-sm text-slate-500">Aggregate Required (Coarse Aggregate)</p>
+                            <p id="est-aggregate" class="text-2xl font-bold text-green-700">0.00 m³</p>
+                        </div>
+                        <!-- Steel -->
+                        <div class="bg-indigo-50 p-4 rounded-lg">
+                            <p class="text-sm text-slate-500">Steel Reinforcement (Based on %)</p>
+                            <p id="est-steel-weight" class="text-2xl font-bold text-indigo-700">0.00 kg</p>
+                            <p id="est-steel-volume" class="text-sm text-slate-600 mt-1">(0.00 m³)</p>
+                        </div>
+                    </div>
+                    <div class="result-box bg-blue-100 text-blue-800 mt-6 text-left">
+                        <h3 class="font-bold">Concrete Mix Used: <span id="est-mix-ratio">M25 (1:1:2)</span></h3>
+                        <p class="text-sm mt-1">Note: This is an estimation based on standard nominal mixes (IS 456) and a dry volume factor of 1.54. Actual quantities may vary based on site conditions, wastage, and design mix.</p>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</main>
+
+<script>
+    // --- Global Constants ---
+    const ULS_LOAD_FACTOR = 1.5;
+    const STEEL_GAMMA_M0 = 1.1; // IS 800: Cl. 5.4.1
+    const DRY_VOLUME_FACTOR = 1.54; // Conversion from Wet to Dry Volume
+    const CEMENT_DENSITY_KG_M3 = 1440; // Cement density in kg/m³
+    const CEMENT_BAG_KG = 50; // Mass of one cement bag
+    const STEEL_DENSITY_KG_M3 = 7850; // Density of steel
+
+    // IS 456 Nominal Mix Ratios (Cement:Sand:Aggregate)
+    const MIX_RATIOS = {
+        'M10': [1, 3, 6],
+        'M15': [1, 2, 4],
+        'M20': [1, 1.5, 3],
+        'M25': [1, 1, 2], // Design mix is preferred, but this nominal ratio is used for conservative estimation.
+    };
+
+    // --- Utility Functions ---
+    function updateOutput(id, value, unit) {
+        document.getElementById(id).textContent = `${value.toFixed(2)} ${unit}`;
+    }
+
+    function getRccInputs() {
+        return {
+            L: parseFloat(document.getElementById('rcc-L').value) || 0,
+            w: parseFloat(document.getElementById('rcc-w').value) || 0,
+            supportType: document.getElementById('rcc-support').value,
+            b_mm: parseFloat(document.getElementById('rcc-b').value) || 0,
+            D_mm: parseFloat(document.getElementById('rcc-D').value) || 0,
+            cover_mm: parseFloat(document.getElementById('rcc-cover').value) || 0,
+            barDia: parseFloat(document.getElementById('rcc-barDia').value) || 0,
+            fck: parseFloat(document.getElementById('rcc-fck').value) || 0,
+            fy: parseFloat(document.getElementById('rcc-fy').value) || 0
+        };
+    }
+    
+    function getSteelInputs() {
+        return {
+            L: parseFloat(document.getElementById('steel-L').value) || 0,
+            w: parseFloat(document.getElementById('steel-w').value) || 0,
+            supportType: document.getElementById('steel-support').value,
+            fy: parseFloat(document.getElementById('steel-fy').value) || 0,
+            Zp_cm3: parseFloat(document.getElementById('steel-Zp').value) || 0,
+            h_mm: parseFloat(document.getElementById('steel-h').value) || 0,
+            tw_mm: parseFloat(document.getElementById('steel-tw').value) || 0,
+            beta_b: parseFloat(document.getElementById('steel-beta_b').value) || 0
+        };
+    }
+
+    function getEstimationInputs() {
+        return {
+            L: parseFloat(document.getElementById('est-L').value) || 0,
+            B: parseFloat(document.getElementById('est-B').value) || 0,
+            D: parseFloat(document.getElementById('est-D').value) || 0,
+            grade: document.getElementById('est-grade').value,
+            steelPercent: parseFloat(document.getElementById('est-steel-percent').value) || 0
+        };
+    }
+
+    /**
+     * Calculates M_max, V_max, and Support reactions R for UDL beam.
+     */
+    function calculateBeamForces(L, w_service, supportType) {
+        let M_max = 0;
+        let V_max = 0;
+        let R_A = 0;
+        let R_B = 0;
+
+        if (supportType === 'simply_supported') {
+            M_max = (w_service * L * L) / 8;
+            V_max = (w_service * L) / 2;
+            R_A = V_max;
+            R_B = V_max;
+        } else if (supportType === 'cantilever') {
+            M_max = (w_service * L * L) / 2;
+            V_max = w_service * L;
+            R_A = V_max;
+            R_B = 0;
+        }
+
+        return { M_max, V_max, R_A, R_B };
+    }
+
+    /**
+     * Draws SFD/BMD diagrams on a canvas.
+     */
+    function drawDiagrams(canvasId, L, w_service, supportType) {
+        const canvas = document.getElementById(canvasId);
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        ctx.clearRect(0, 0, width, height);
+        
+        const padding = 30;
+        const beamStart = padding;
+        const beamEnd = width - padding;
+        const beamLengthPx = beamEnd - beamStart;
+        
+        const { M_max, V_max } = calculateBeamForces(L, w_service, supportType);
+
+        const beamY = height / 2;
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(beamStart, beamY);
+        ctx.lineTo(beamEnd, beamY);
+        ctx.stroke();
+
+        // Supports Visualization
+        ctx.fillStyle = '#4f46e5';
+        if (supportType === 'simply_supported') {
+            ctx.beginPath(); // Left Support (Pin)
+            ctx.moveTo(beamStart, beamY + 5);
+            ctx.lineTo(beamStart - 10, beamY + 15);
+            ctx.lineTo(beamStart + 10, beamY + 15);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath(); // Right Support (Roller)
+            ctx.arc(beamEnd, beamY + 12, 5, 0, 2 * Math.PI);
+            ctx.fill();
+        } else if (supportType === 'cantilever') {
+            ctx.strokeStyle = '#4f46e5';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(beamStart, beamY - 20);
+            ctx.lineTo(beamStart, beamY + 20);
+            ctx.stroke();
+            ctx.fillStyle = '#4f46e5';
+            ctx.fillRect(beamStart - 5, beamY - 20, 5, 40);
+        }
+
+        // UDL Representation
+        ctx.strokeStyle = '#991b1b';
+        ctx.lineWidth = 1;
+        const udlHeight = 15;
+        for (let x = beamStart + 5; x < beamEnd; x += 20) {
+            ctx.beginPath();
+            ctx.moveTo(x, beamY - 5);
+            ctx.lineTo(x, beamY - 5 - udlHeight);
+            ctx.lineTo(x - 3, beamY - 5 - udlHeight + 4);
+            ctx.moveTo(x, beamY - 5 - udlHeight);
+            ctx.lineTo(x + 3, beamY - 5 - udlHeight + 4);
+            ctx.stroke();
+        }
+        ctx.beginPath();
+        ctx.moveTo(beamStart, beamY - 5 - udlHeight);
+        ctx.lineTo(beamEnd, beamY - 5 - udlHeight);
+        ctx.stroke();
+        
+        ctx.fillStyle = '#334155';
+        ctx.font = '12px Inter';
+        ctx.textAlign = 'center';
+        ctx.fillText(`L = ${L.toFixed(1)} m`, width / 2, beamY + 30);
+        ctx.fillText(`w = ${w_service.toFixed(1)} kN/m (Service Load)`, width / 2, beamY - 30 - udlHeight);
+
+        // --- Diagram Plotting ---
+        const scaleSFD = (V_max !== 0) ? (height / 2 - padding) / V_max : 0;
+        const scaleBMD = (M_max !== 0) ? (height / 2 - padding) / M_max : 0;
+
+        // SFD (Top Half)
+        ctx.strokeStyle = '#4f46e5';
+        ctx.lineWidth = 2;
+        ctx.fillStyle = 'rgba(79, 70, 229, 0.2)';
+        
+        if (V_max > 0) {
+            ctx.beginPath();
+            if (supportType === 'simply_supported') {
+                ctx.moveTo(beamStart, beamY - V_max * scaleSFD);
+                ctx.lineTo(beamEnd, beamY + V_max * scaleSFD);
+                ctx.lineTo(beamEnd, beamY);
+                ctx.lineTo(beamStart, beamY);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                
+                ctx.fillStyle = '#4f46e5';
+                ctx.textAlign = 'left';
+                ctx.fillText(`${V_max.toFixed(2)} kN`, beamStart + 5, beamY - V_max * scaleSFD - 5);
+                ctx.textAlign = 'right';
+                ctx.fillText(`-${V_max.toFixed(2)} kN`, beamEnd - 5, beamY + V_max * scaleSFD + 15);
+            } else if (supportType === 'cantilever') {
+                ctx.moveTo(beamStart, beamY - V_max * scaleSFD); 
+                ctx.lineTo(beamEnd, beamY); 
+                ctx.lineTo(beamStart, beamY);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#4f46e5';
+                ctx.textAlign = 'left';
+                ctx.fillText(`${V_max.toFixed(2)} kN`, beamStart + 5, beamY - V_max * scaleSFD - 5);
+            }
+        }
+
+        // BMD (Bottom Half)
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 2;
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.2)';
+        
+        if (M_max > 0) {
+            ctx.beginPath();
+            if (supportType === 'simply_supported') {
+                ctx.moveTo(beamStart, beamY);
+                for (let i = 0; i <= beamLengthPx; i++) {
+                    const x_m = (i / beamLengthPx) * L;
+                    const M_val = (w_service / 2) * x_m * (L - x_m);
+                    const M_px = M_val * scaleBMD;
+                    ctx.lineTo(beamStart + i, beamY + M_px);
+                }
+                ctx.lineTo(beamEnd, beamY);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#10b981';
+                ctx.textAlign = 'center';
+                ctx.fillText(`${M_max.toFixed(2)} kNm`, width / 2, beamY + M_max * scaleBMD + 15);
+            } else if (supportType === 'cantilever') {
+                ctx.moveTo(beamStart, beamY);
+                for (let i = 0; i <= beamLengthPx; i++) {
+                    const x_m_from_fixed = (i / beamLengthPx) * L; 
+                    const x_m_from_free = L - x_m_from_fixed;
+                    const M_val = (w_service * x_m_from_free * x_m_from_free) / 2;
+                    const M_px = M_val * scaleBMD; 
+                    ctx.lineTo(beamStart + i, beamY + M_px); 
+                }
+                ctx.lineTo(beamEnd, beamY);
+                ctx.lineTo(beamStart, beamY);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#10b981';
+                ctx.textAlign = 'left';
+                ctx.fillText(`-${M_max.toFixed(2)} kNm`, beamStart + 5, beamY + M_max * scaleBMD + 15);
+            }
+        }
+    }
+
+    // --- IS 456 (RCC) Design Logic ---
+
+    function runRCCDesign() {
+        const { L, w, supportType, b_mm, D_mm, cover_mm, barDia, fck, fy } = getRccInputs();
+        
+        if (L > 0 && w >= 0) {
+            drawDiagrams('rcc-diagram-canvas', L, w, supportType);
+        } else {
+            const canvas = document.getElementById('rcc-diagram-canvas');
+            canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        if (L <= 0 || w < 0 || b_mm <= 0 || D_mm <= 0 || cover_mm < 0 || fck <= 0 || fy <= 0) {
+            document.getElementById('rcc-Mservice').textContent = `- kNm`;
+            document.getElementById('rcc-Mu').textContent = `- kNm`;
+            document.getElementById('rcc-Mulim').textContent = `- kNm`;
+            document.getElementById('rcc-design-status').textContent = 'Please enter valid inputs.';
+            document.getElementById('rcc-design-status').className = 'result-box mt-4 font-semibold text-lg flex items-center justify-center bg-gray-200 text-slate-700';
+            return;
+        }
+
+        const { M_max: M_service_kNm } = calculateBeamForces(L, w, supportType); 
+
+        const d_mm = D_mm - cover_mm;
+        const Mu_kNm = M_service_kNm * ULS_LOAD_FACTOR;
+        const Mu_Nmm = Mu_kNm * 1e6;
+
+        let xu_max_ratio;
+        if (fy === 415) xu_max_ratio = 0.48;
+        else if (fy === 500) xu_max_ratio = 0.46;
+        else xu_max_ratio = 0.53; 
+
+        const Mu_lim_Nmm = 0.36 * xu_max_ratio * (1 - 0.42 * xu_max_ratio) * b_mm * d_mm * d_mm * fck;
+        const Mu_lim_kNm = Mu_lim_Nmm / 1e6;
+
+        // --- Update Analysis Results ---
+        document.getElementById('rcc-Mservice').textContent = `${M_service_kNm.toFixed(2)} kNm`;
+        document.getElementById('rcc-Mu').textContent = `${Mu_kNm.toFixed(2)} kNm`;
+        document.getElementById('rcc-Mulim').textContent = `${Mu_lim_kNm.toFixed(2)} kNm`;
+        
+        const designStatusEl = document.getElementById('rcc-design-status');
+        designStatusEl.textContent = '';
+        designStatusEl.className = 'result-box mt-4 font-semibold text-lg flex items-center justify-center';
+
+        let Ast_req = 0;
+        let Ast_provided = 0;
+        let numBars = 0;
+        const barArea = Math.PI * Math.pow(barDia, 2) / 4;
+
+        if (Mu_kNm > Mu_lim_kNm) {
+            designStatusEl.innerHTML = `SECTION FAIL: M<sub>u</sub> > M<sub>u, lim</sub>. Increase D, b, or f<sub>ck</sub>.`;
+            designStatusEl.classList.add('compliance-fail');
+        } else {
+            designStatusEl.innerHTML = `SECTION ADEQUATE: M<sub>u</sub> &le; M<sub>u, lim</sub>. Proceed to steel calculation.`;
+            designStatusEl.classList.add('compliance-pass');
+
+            const term = 1 - Math.sqrt(1 - (4.6 * Mu_Nmm) / (fck * b_mm * d_mm * d_mm));
+            Ast_req = (0.5 * fck / fy) * term * b_mm * d_mm;
+            
+            numBars = Math.ceil(Ast_req / barArea);
+            numBars = Math.max(numBars, Ast_req > 0 && barDia > 0 ? 2 : 0); 
+            Ast_provided = numBars * barArea;
+
+            const Ast_min = (0.85 * b_mm * d_mm) / fy;
+            const Ast_max = 0.04 * b_mm * D_mm;
+            const minCheckPass = Ast_provided >= Ast_min;
+            const maxCheckPass = Ast_provided <= Ast_max;
+            
+            // --- Update Reinforcement Schedule ---
+            document.getElementById('rcc-Ast-req').textContent = Ast_req.toFixed(2);
+            document.getElementById('rcc-Ast-prov').textContent = Ast_provided.toFixed(2);
+            document.getElementById('rcc-Num-bars').textContent = numBars.toFixed(0);
+            document.getElementById('rcc-barDia-out').textContent = barDia.toFixed(0);
+
+            // --- Update Compliance Status ---
+            const minEl = document.getElementById('rcc-min-check-status');
+            const maxEl = document.getElementById('rcc-max-check-status');
+            
+            minEl.innerHTML = `Min Steel (A<sub>st, min</sub>): ${Ast_min.toFixed(2)} mm² <br> Status: ${minCheckPass ? '<span class="text-green-700 font-bold">PASS</span>' : '<span class="text-red-700 font-bold">FAIL</span>'} (A<sub>st, prov</sub> &ge; A<sub>st, min</sub>)`;
+            minEl.classList.toggle('bg-green-50', minCheckPass);
+            minEl.classList.toggle('bg-red-50', !minCheckPass);
+
+            maxEl.innerHTML = `Max Steel (A<sub>st, max</sub>): ${Ast_max.toFixed(2)} mm² <br> Status: ${maxCheckPass ? '<span class="text-green-700 font-bold">PASS</span>' : '<span class="text-red-700 font-bold">FAIL</span>'} (A<sub>st, prov</sub> &le; A<sub>st, max</sub>)`;
+            maxEl.classList.toggle('bg-green-50', maxCheckPass);
+            maxEl.classList.toggle('bg-red-50', !maxCheckPass);
+        }
+    }
+
+    // --- IS 800 (Steel) Design Logic ---
+
+    function updateStatus(elementId, isPassing, message) {
+        const el = document.getElementById(elementId);
+        el.className = 'result-box font-bold ' + (isPassing ? 'compliance-pass' : 'compliance-fail');
+        el.innerHTML = `<div>${isPassing ? '&#10003; PASS' : '&#10007; FAIL'}</div><div class="text-sm font-normal mt-1">${message}</div>`;
+    }
+
+    function runSteelDesign() {
+        const { L, w, supportType, fy, Zp_cm3, h_mm, tw_mm, beta_b } = getSteelInputs();
+        
+        if (L > 0 && w >= 0) {
+            drawDiagrams('steel-diagram-canvas', L, w, supportType);
+        } else {
+            const canvas = document.getElementById('steel-diagram-canvas');
+            canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        if (L <= 0 || w < 0 || fy <= 0 || Zp_cm3 <= 0 || h_mm <= 0 || tw_mm <= 0 || beta_b <= 0) {
+             document.getElementById('steel-wu').textContent = `- kN/m`;
+             document.getElementById('steel-Mu').textContent = `- kNm`;
+             document.getElementById('steel-Vu').textContent = `- kN`;
+             document.getElementById('steel-Md').textContent = `- kNm`;
+             document.getElementById('steel-Vd').textContent = `- kN`;
+             document.getElementById('steel-final-summary').className = 'result-box bg-gray-200';
+             document.getElementById('steel-final-summary').textContent = 'Please enter valid section properties and loads.';
+            return;
+        }
+
+        const wu = w * ULS_LOAD_FACTOR;
+        const { M_max: Mu, V_max: Vu } = calculateBeamForces(L, wu, supportType); 
+        
+        updateOutput('steel-wu', wu, 'kN/m');
+        updateOutput('steel-Mu', Mu, 'kNm');
+        updateOutput('steel-Vu', Vu, 'kN');
+
+        // 2. Moment Capacity (Cl. 8.2.1.2)
+        const Zp_mm3 = Zp_cm3 * 1e3;
+        const Md_Nmm = (beta_b * Zp_mm3 * fy) / STEEL_GAMMA_M0;
+        const Md_kNm = Md_Nmm / 1e6;
+        
+        const momentCheckPass = Mu <= Md_kNm;
+        const momentCheckMsg = momentCheckPass ? `Required M<sub>u</sub> (${Mu.toFixed(2)} kNm) &le; M<sub>d</sub> (${Md_kNm.toFixed(2)} kNm).` : `FAILURE: Required M<sub>u</sub> (${Mu.toFixed(2)} kNm) > M<sub>d</sub> (${Md_kNm.toFixed(2)} kNm).`;
+        updateOutput('steel-Md', Md_kNm, 'kNm');
+        updateStatus('steel-moment-check-status', momentCheckPass, momentCheckMsg);
+
+        // 3. Shear Capacity (Cl. 8.4.1)
+        const Av_mm2 = h_mm * tw_mm;
+        const Vd_N = Av_mm2 * (fy / Math.sqrt(3)) / STEEL_GAMMA_M0;
+        const Vd_kN = Vd_N / 1e3;
+
+        const shearCheckPass = Vu <= Vd_kN;
+        const shearCheckMsg = shearCheckPass ? `Required V<sub>u</sub> (${Vu.toFixed(2)} kN) &le; V<sub>d</sub> (${Vd_kN.toFixed(2)} kN).` : `FAILURE: Required V<sub>u</sub> (${Vu.toFixed(2)} kN) > V<sub>d</sub> (${Vd_kN.toFixed(2)} kN).`;
+        updateOutput('steel-Vd', Vd_kN, 'kN');
+        updateStatus('steel-shear-check-status', shearCheckPass, shearCheckMsg);
+
+        // 4. Final Summary
+        const finalSummaryEl = document.getElementById('steel-final-summary');
+        if (momentCheckPass && shearCheckPass) {
+            finalSummaryEl.innerHTML = 'SECTION IS SUITABLE (PASSES M<sub>u</sub> & V<sub>u</sub> Checks)';
+            finalSummaryEl.classList.remove('compliance-fail', 'bg-gray-200');
+            finalSummaryEl.classList.add('compliance-pass');
+        } else {
+            finalSummaryEl.innerHTML = 'SECTION IS UNSUITABLE (FAILURES PRESENT)';
+            finalSummaryEl.classList.remove('compliance-pass', 'bg-gray-200');
+            finalSummaryEl.classList.add('compliance-fail');
+        }
+    }
+    
+    // --- Material Estimation Logic (NEW) ---
+
+    function runEstimation() {
+        const { L, B, D, grade, steelPercent } = getEstimationInputs();
+
+        if (L <= 0 || B <= 0 || D <= 0 || steelPercent < 0) {
+            document.getElementById('est-Vwet').textContent = '0.00 m³';
+            document.getElementById('est-cement-bags').textContent = '0.0 bags';
+            document.getElementById('est-cement-mass').textContent = '(0.00 kg)';
+            document.getElementById('est-sand').textContent = '0.00 m³';
+            document.getElementById('est-aggregate').textContent = '0.00 m³';
+            document.getElementById('est-steel-weight').textContent = '0.00 kg';
+            document.getElementById('est-steel-volume').textContent = '(0.00 m³)';
+            document.getElementById('est-mix-ratio').textContent = 'Please enter valid dimensions.';
+            return;
+        }
+
+        // 1. Calculate Wet Volume (m³)
+        const V_wet = L * B * D;
+
+        // 2. Get Mix Ratios and Sum
+        const mix = MIX_RATIOS[grade];
+        const mixSum = mix.reduce((a, b) => a + b, 0);
+
+        // 3. Calculate Dry Volume
+        const V_dry = V_wet * DRY_VOLUME_FACTOR;
+        
+        // 4. Calculate Material Volumes
+        const V_cement = V_dry * (mix[0] / mixSum);
+        const V_sand = V_dry * (mix[1] / mixSum);
+        const V_aggregate = V_dry * (mix[2] / mixSum);
+        
+        // 5. Convert Cement Volume to Mass and Bags
+        const M_cement_kg = V_cement * CEMENT_DENSITY_KG_M3;
+        const N_cement_bags = M_cement_kg / CEMENT_BAG_KG;
+
+        // 6. Calculate Steel Weight (Based on % of Wet Volume)
+        const V_steel = V_wet * (steelPercent / 100);
+        const M_steel_kg = V_steel * STEEL_DENSITY_KG_M3;
+        
+        // --- Update Outputs ---
+        document.getElementById('est-Vwet').textContent = `${V_wet.toFixed(3)} m³`;
+        
+        document.getElementById('est-cement-bags').textContent = `${N_cement_bags.toFixed(1)} bags`;
+        document.getElementById('est-cement-mass').textContent = `(${M_cement_kg.toFixed(2)} kg)`;
+        
+        document.getElementById('est-sand').textContent = `${V_sand.toFixed(3)} m³`;
+        document.getElementById('est-aggregate').textContent = `${V_aggregate.toFixed(3)} m³`;
+
+        document.getElementById('est-steel-weight').textContent = `${M_steel_kg.toFixed(2)} kg`;
+        document.getElementById('est-steel-volume').textContent = `(${V_steel.toFixed(3)} m³)`;
+        
+        document.getElementById('est-mix-ratio').textContent = `${grade} (${mix[0]}:${mix[1]}:${mix[2]})`;
+    }
+
+
+    // --- Tab Switching Logic ---
+    function switchTab(activeTabId, runFunction) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+        document.getElementById(activeTabId).classList.remove('hidden');
+
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            const targetId = btn.onclick.toString().match(/'([^']+)'/)[1];
+            btn.classList.toggle('tab-active', targetId === activeTabId);
+            btn.classList.toggle('tab-inactive', targetId !== activeTabId);
+        });
+        
+        // Toggle input visibility
+        document.getElementById('rcc-inputs').classList.toggle('hidden', activeTabId !== 'rcc-tab-content');
+        document.getElementById('steel-inputs').classList.toggle('hidden', activeTabId !== 'steel-tab-content');
+        document.getElementById('estimation-inputs').classList.toggle('hidden', activeTabId !== 'estimation-tab-content');
+
+        // Run initial check for the active tab
+        if (typeof window[runFunction] === 'function') {
+            window[runFunction]();
+        }
+    }
+
+    // --- Event Listener Setup ---
+    function attachListeners(formId, runFunction) {
+        document.querySelectorAll(`#${formId} input, #${formId} select`).forEach(el => {
+            el.addEventListener('input', runFunction);
+            el.addEventListener('change', runFunction); 
+        });
+    }
+
+    // Initial setup
+    document.addEventListener('DOMContentLoaded', () => {
+        // Attach listeners for all forms
+        attachListeners('rcc-form', runRCCDesign);
+        attachListeners('steel-form', runSteelDesign);
+        attachListeners('estimation-form', runEstimation); // NEW LISTENER
+        
+        // Run the default tab (RCC)
+        runRCCDesign();
+        switchTab('rcc-tab-content', 'runRCCDesign');
+    });
+</script>
+</body></html>
