@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Civil Design Suite (Indian Standards)</title>
+    <title>Civil Structural Design Suite</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -12,11 +12,11 @@
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6; /* Lighter gray background */
         }
-        /* Custom styles for a more polished look */
         .tab-button.active {
-            background-color: #4f46e5; /* Indigo 600 */
-            color: white;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            background-color: #e0e7ff; /* Lighter indigo for active tab */
+            color: #312e81; /* Dark indigo text */
+            font-weight: 700;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
         }
         .tab-button {
             transition: all 0.2s ease-in-out;
@@ -34,820 +34,1000 @@
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
         }
         .run-button {
-            background-color: #16a34a; /* Green 600 */
+            background-color: #4f46e5;
             color: white;
             font-weight: 700;
             padding: 0.75rem 1rem;
             border-radius: 0.5rem;
             transition: background-color 0.2s;
             width: 100%;
+            margin-top: 1rem;
         }
         .run-button:hover {
-            background-color: #15803d; /* Green 700 */
+            background-color: #4338ca;
         }
         .result-card {
-            background-color: #eef2ff; /* Indigo 50 */
+            background-color: #ffffff;
             padding: 1.5rem;
             border-radius: 0.75rem;
-            border: 1px solid #c7d2fe; /* Indigo 200 */
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
         }
         .quantity-card {
             background-color: #f0fdf4; /* Green 50 */
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            border: 1px solid #bbf7d0; /* Green 200 */
+             border: 1px solid #bbf7d0; /* Green 200 */
         }
         .result-title {
-            color: #312e81; /* Indigo 900 */
-            font-weight: 800;
-        }
-        .quantity-title {
-            color: #14532d; /* Green 900 */
+            color: #312e81;
             font-weight: 800;
         }
         .result-value {
-             color: #4338ca; /* Indigo 700 */
+             color: #4338ca;
              font-weight: 700;
         }
-        .quantity-value {
-             color: #166534; /* Green 700 */
-             font-weight: 700;
+        .status-safe { color: #16a34a; }
+        .status-unsafe { color: #dc2626; }
+        .visual-box {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            min-height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
+        .status-visual {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 1.125rem;
+        }
+        .status-visual.pass { background-color: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+        .status-visual.fail { background-color: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
     </style>
 </head>
-<body class="p-4 sm:p-8">
+<body class="p-0 sm:p-4">
 
-    <main class="max-w-7xl mx-auto bg-white rounded-2xl shadow-xl p-6 sm:p-10">
+    <main class="max-w-7xl mx-auto bg-white rounded-none sm:rounded-2xl shadow-xl">
         <!-- Header -->
-        <header class="border-b-2 border-gray-200 pb-4 mb-8">
-            <h1 class="text-4xl font-extrabold text-indigo-700">Civil Engineering Design Suite</h1>
-            <p class="text-md text-gray-500 mt-1">Calculations based on Indian Standard (IS) Codes</p>
+        <header class="bg-[#5c7f67] text-white p-6 sm:p-8 rounded-t-none sm:rounded-t-2xl shadow-lg relative">
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-wide drop-shadow-md">Civil Structural Design Suite</h1>
+            <p class="text-sm sm:text-md text-gray-200 mt-1 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-80"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="M15 9.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"></path><path d="M12 15a6 6 0 0 0-5 3"></path></svg>
+                <span>Designed and Developed by Arif Ahmad</span>
+            </p>
         </header>
 
         <!-- Tab Navigation -->
-        <nav class="flex flex-wrap gap-2 mb-8">
-            <button class="tab-button active flex-1 py-3 px-2 rounded-xl font-semibold text-center" data-tab="beam-analysis">Beam Analysis</button>
-            <button class="tab-button flex-1 py-3 px-2 rounded-xl font-semibold text-center" data-tab="slab-design">Slab Design</button>
-            <button class="tab-button flex-1 py-3 px-2 rounded-xl font-semibold text-center" data-tab="column-design">Column Design</button>
-            <button class="tab-button flex-1 py-3 px-2 rounded-xl font-semibold text-center" data-tab="footing-sizing">Footing Sizing</button>
+        <nav class="flex flex-wrap gap-2 p-4 bg-white border-b-2 border-gray-100">
+            <button class="tab-button active flex-1 flex items-center justify-center gap-2 py-3 px-2 rounded-xl font-semibold text-center text-gray-600" data-tab="beam-analysis">Beam</button>
+            <button class="tab-button flex-1 flex items-center justify-center gap-2 py-3 px-2 rounded-xl font-semibold text-center text-gray-600" data-tab="column-design">Column</button>
+            <button class="tab-button flex-1 flex items-center justify-center gap-2 py-3 px-2 rounded-xl font-semibold text-center text-gray-600" data-tab="slab-design">Slab</button>
+            <button class="tab-button flex-1 flex items-center justify-center gap-2 py-3 px-2 rounded-xl font-semibold text-center text-gray-600" data-tab="footing-design">Footing</button>
+            <button class="tab-button flex-1 flex items-center justify-center gap-2 py-3 px-2 rounded-xl font-semibold text-center text-gray-600" data-tab="bbs">BBS</button>
+            <button class="tab-button flex-1 flex items-center justify-center gap-2 py-3 px-2 rounded-xl font-semibold text-center text-gray-600" data-tab="staircase-design">Staircase</button>
+            <button class="tab-button flex-1 flex items-center justify-center gap-2 py-3 px-2 rounded-xl font-semibold text-center text-gray-600" data-tab="retaining-wall">Retaining Wall</button>
+            <button class="tab-button flex-1 flex items-center justify-center gap-2 py-3 px-2 rounded-xl font-semibold text-center text-gray-600" data-tab="water-tank">Water Tank</button>
+            <button class="tab-button flex-1 flex items-center justify-center gap-2 py-3 px-2 rounded-xl font-semibold text-center text-gray-600" data-tab="history">History</button>
         </nav>
 
-        <!-- Tab Content -->
-        <div>
+        <div class="p-4 sm:p-8">
             <!-- BEAM ANALYSIS TAB -->
-            <div id="beam-analysis" class="tab-content space-y-6">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Inputs -->
-                    <div class="lg:col-span-1 space-y-4 p-5 bg-gray-50 rounded-xl border">
-                        <div id="beam-visual" class="w-full h-24 bg-white rounded-lg border flex items-center justify-center p-2 mb-4"></div>
-                        <h3 class="text-xl font-bold text-gray-800">1. Beam Properties</h3>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label for="beamWidth" class="block text-sm font-medium text-gray-700">Width (mm)</label>
-                                <input type="number" id="beamWidth" value="230" min="100" class="form-input mt-1">
-                            </div>
-                            <div>
-                                <label for="beamDepth" class="block text-sm font-medium text-gray-700">Depth (mm)</label>
-                                <input type="number" id="beamDepth" value="450" min="100" class="form-input mt-1">
-                            </div>
-                        </div>
-                        <div>
-                            <label for="beamType" class="block text-sm font-medium text-gray-700">Beam Type</label>
-                            <select id="beamType" class="form-input mt-1">
-                                <option value="simply-supported">Simply Supported</option>
-                                <option value="cantilever">Cantilever</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="beamLength" class="block text-sm font-medium text-gray-700">Span (L), meters</label>
-                            <input type="number" id="beamLength" value="6" min="1" class="form-input mt-1">
-                        </div>
-                        
-                        <h3 class="text-xl font-bold text-gray-800 pt-4 border-t">2. Loads</h3>
-                        <div>
-                            <label for="beamUDL" class="block text-sm font-medium text-gray-700">Uniformly Distributed Load (w), kN/m</label>
-                            <input type="number" id="beamUDL" value="15" min="0" class="form-input mt-1">
-                        </div>
-                        <div id="pointLoadsContainer">
-                             <label class="block text-sm font-medium text-gray-700">Point Loads (P)</label>
-                             <div class="point-load-row grid grid-cols-11 gap-2 items-center mt-1">
-                                <input type="number" placeholder="Load (kN)" class="form-input col-span-5 point-load-p" value="20">
-                                <input type="number" placeholder="Dist (m)" class="form-input col-span-5 point-load-x" value="3">
-                                <button class="text-red-500 hover:text-red-700 col-span-1" onclick="removePointLoad(this)">✖</button>
+            <div id="beam-analysis" class="tab-content">
+                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-1 space-y-4">
+                        <div class="result-card p-5">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">1. Beam Properties</h3>
+                            <div id="beam-visual" class="visual-box mb-4"></div>
+                             <div class="space-y-4">
+                                <div><label for="beamType" class="block text-sm font-medium text-gray-700">Beam Type</label><select id="beamType" class="form-input mt-1"><option value="simply-supported">Simply Supported</option><option value="cantilever">Cantilever</option></select></div>
+                                <div><label for="beamLength" class="block text-sm font-medium text-gray-700">Span (L), meters</label><input type="number" id="beamLength" value="6" class="form-input mt-1"></div>
                              </div>
                         </div>
-                        <button onclick="addPointLoad()" class="w-full text-sm font-semibold text-indigo-600 hover:text-indigo-800 py-2 rounded-lg border-2 border-dashed border-indigo-300 hover:border-indigo-500 transition">+ Add Point Load</button>
-                        
-                        <div class="pt-4">
-                            <button id="runBeamAnalysis" class="run-button">Run Analysis</button>
+                        <div class="result-card p-5">
+                            <h3 class="text-xl font-bold text-gray-800">2. Loads</h3>
+                             <div class="mt-4 space-y-4">
+                                <div><label for="beamUDL" class="block text-sm font-medium text-gray-700">UDL (w), kN/m</label><input type="number" id="beamUDL" value="15" class="form-input mt-1"></div>
+                             </div>
+                             <button id="runBeamButton" class="run-button">Run Analysis</button>
                         </div>
                     </div>
-
-                    <!-- Results -->
                     <div class="lg:col-span-2 space-y-6">
-                         <div class="quantity-card">
-                             <h3 class="quantity-title text-2xl mb-4">Material Quantities</h3>
-                             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                 <div><p class="font-semibold text-gray-600">Concrete:</p><p id="beamConcreteVol" class="quantity-value text-xl">-</p></div>
-                                 <div><p class="font-semibold text-gray-600">Cement:</p><p id="beamCement" class="quantity-value text-xl">-</p></div>
-                                 <div><p class="font-semibold text-gray-600">Sand:</p><p id="beamSand" class="quantity-value text-xl">-</p></div>
-                                 <div><p class="font-semibold text-gray-600">Aggregate:</p><p id="beamAggregate" class="quantity-value text-xl">-</p></div>
-                                 <div class="col-span-2 md:col-span-4"><p class="font-semibold text-gray-600">Steel (Est.):</p><p id="beamSteel" class="quantity-value text-xl">-</p></div>
-                             </div>
-                             <p class="text-sm text-gray-500 mt-4">Note: Assumes M25 concrete & 1.5% steel for estimation.</p>
+                         <div class="result-card">
+                            <h3 class="result-title text-2xl mb-4">Analysis Results</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="text-center"><p class="font-semibold text-gray-600">Max Shear Force</p><p id="beamMaxShear" class="result-value text-2xl">-</p></div>
+                                <div class="text-center"><p class="font-semibold text-gray-600">Max Bending Moment</p><p id="beamMaxMoment" class="result-value text-2xl">-</p></div>
+                            </div>
                          </div>
-                         <div class="p-4 bg-white rounded-xl border">
-                             <h3 class="text-lg font-semibold text-gray-700 mb-2">Shear Force Diagram (SFD)</h3>
+                         <div class="result-card">
+                             <h3 class="result-title text-xl mb-2">Shear Force Diagram (SFD)</h3>
                              <div id="sfd-visual" class="w-full h-48 bg-gray-50 rounded-md"></div>
-                        </div>
-                         <div class="p-4 bg-white rounded-xl border">
-                             <h3 class="text-lg font-semibold text-gray-700 mb-2">Bending Moment Diagram (BMD)</h3>
+                         </div>
+                         <div class="result-card">
+                             <h3 class="result-title text-xl mb-2">Bending Moment Diagram (BMD)</h3>
                              <div id="bmd-visual" class="w-full h-48 bg-gray-50 rounded-md"></div>
-                        </div>
+                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- SLAB DESIGN TAB -->
-            <div id="slab-design" class="tab-content hidden space-y-6">
-                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                     <div class="lg:col-span-1 space-y-4 p-5 bg-gray-50 rounded-xl border">
-                        <div id="slab-visual" class="w-full h-48 bg-white rounded-lg border flex items-center justify-center p-2 mb-4"></div>
-                         <h3 class="text-xl font-bold text-gray-800">1. Slab Properties</h3>
-                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Shorter Span (Lx), meters</label>
-                            <input type="number" id="slabLx" value="3.5" min="1" class="form-input mt-1">
-                         </div>
-                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Longer Span (Ly), meters</label>
-                            <input type="number" id="slabLy" value="5" min="1" class="form-input mt-1">
-                         </div>
-                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Live Load (LL), kN/m²</label>
-                            <input type="number" id="slabLL" value="3" min="0" class="form-input mt-1">
-                         </div>
-                         <h3 class="text-xl font-bold text-gray-800 pt-4 border-t">2. Material Grades</h3>
-                          <div>
-                            <label class="block text-sm font-medium text-gray-700">Concrete Grade (fck), MPa</label>
-                            <select id="slabFck" class="form-input mt-1"><option value="20">M20</option><option value="25" selected>M25</option><option value="30">M30</option></select>
-                         </div>
-                          <div>
-                            <label class="block text-sm font-medium text-gray-700">Steel Grade (fy), MPa</label>
-                            <select id="slabFy" class="form-input mt-1"><option>415</option><option selected>500</option></select>
-                         </div>
-                          <div class="pt-4">
-                            <button id="runSlabDesign" class="run-button">Run Analysis</button>
-                        </div>
-                     </div>
-                     <div class="lg:col-span-2 space-y-6">
-                        <div class="result-card">
-                             <h3 class="result-title text-2xl mb-4">Slab Design Summary (IS 456:2000)</h3>
-                             <div class="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6">
-                                 <div><p class="font-semibold text-gray-600">Slab Type (Ly/Lx):</p><p id="slabTypeResult" class="result-value text-xl">-</p></div>
-                                 <div><p class="font-semibold text-gray-600">Required Depth (D):</p><p id="slabDepthResult" class="result-value text-xl">0 mm</p></div>
-                                 <div><p class="font-semibold text-gray-600">Main Steel (Ast, short span):</p><p id="slabMainSteelResult" class="result-value text-xl">0 mm²</p></div>
-                                 <div><p class="font-semibold text-gray-600">Distribution Steel (Ast, long span):</p><p id="slabDistSteelResult" class="result-value text-xl">0 mm²</p></div>
-                             </div>
-                         </div>
-                         <div class="quantity-card">
-                             <h3 class="quantity-title text-2xl mb-4">Material Quantities</h3>
-                             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                 <div><p class="font-semibold text-gray-600">Concrete:</p><p id="slabConcreteVol" class="quantity-value text-xl">-</p></div>
-                                 <div><p class="font-semibold text-gray-600">Cement:</p><p id="slabCement" class="quantity-value text-xl">-</p></div>
-                                 <div><p class="font-semibold text-gray-600">Sand:</p><p id="slabSand" class="quantity-value text-xl">-</p></div>
-                                 <div><p class="font-semibold text-gray-600">Aggregate:</p><p id="slabAggregate" class="quantity-value text-xl">-</p></div>
-                                 <div class="col-span-2 md:col-span-4"><p class="font-semibold text-gray-600">Steel:</p><p id="slabSteel" class="quantity-value text-xl">-</p></div>
-                             </div>
-                         </div>
-                     </div>
-                 </div>
             </div>
 
             <!-- COLUMN DESIGN TAB -->
-            <div id="column-design" class="tab-content hidden space-y-6">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                     <div class="lg:col-span-1 space-y-4 p-5 bg-gray-50 rounded-xl border">
-                        <div id="column-visual" class="w-full h-48 bg-white rounded-lg border flex items-center justify-center p-4 mb-4"></div>
-                         <h3 class="text-xl font-bold text-gray-800">1. Column Properties</h3>
-                         <div class="grid grid-cols-2 gap-4">
-                             <div>
-                                <label class="block text-sm font-medium text-gray-700">Width (b), mm</label>
-                                <input type="number" id="colWidth" value="300" min="200" step="25" class="form-input mt-1">
-                             </div>
-                             <div>
-                                <label class="block text-sm font-medium text-gray-700">Depth (D), mm</label>
-                                <input type="number" id="colDepth" value="450" min="200" step="25" class="form-input mt-1">
+            <div id="column-design" class="tab-content hidden">
+                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-1 space-y-4">
+                        <div class="result-card p-5">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">1. Column Properties</h3>
+                            <div id="column-visual" class="visual-box mb-4"></div>
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div><label for="colWidth" class="block text-sm font-medium text-gray-700">Width (mm)</label><input type="number" id="colWidth" value="300" class="form-input mt-1"></div>
+                                    <div><label for="colDepth" class="block text-sm font-medium text-gray-700">Depth (mm)</label><input type="number" id="colDepth" value="450" class="form-input mt-1"></div>
+                                </div>
+                                <div><label for="colPu" class="block text-sm font-medium text-gray-700">Factored Load (Pu), kN</label><input type="number" id="colPu" value="1500" class="form-input mt-1"></div>
                             </div>
-                         </div>
-                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Height (H), meters</label>
-                            <input type="number" id="colHeight" value="3" min="1" step="0.5" class="form-input mt-1">
-                         </div>
-                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Factored Axial Load (Pu), kN</label>
-                            <input type="number" id="colPu" value="1500" min="10" class="form-input mt-1">
-                         </div>
-                         <h3 class="text-xl font-bold text-gray-800 pt-4 border-t">2. Material Grades</h3>
-                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Concrete Grade (fck), MPa</label>
-                            <select id="colFck" class="form-input mt-1"><option value="20">M20</option><option value="25" selected>M25</option><option value="30">M30</option></select>
-                         </div>
-                          <div>
-                            <label class="block text-sm font-medium text-gray-700">Steel Grade (fy), MPa</label>
-                            <select id="colFy" class="form-input mt-1"><option>415</option><option selected>500</option></select>
-                         </div>
-                         <div class="pt-4">
-                            <button id="runColumnDesign" class="run-button">Run Analysis</button>
                         </div>
-                     </div>
-                     <div class="lg:col-span-2 space-y-6">
-                         <div class="result-card">
-                             <h3 class="result-title text-2xl mb-4">Short Axially Loaded Column Design (IS 456:2000, Cl 39.3)</h3>
-                             <div class="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6">
-                                 <div><p class="font-semibold text-gray-600">Required Steel Area (Asc):</p><p id="colSteelAreaResult" class="result-value text-xl">0 mm²</p></div>
-                                 <div><p class="font-semibold text-gray-600">Steel Percentage (pt):</p><p id="colSteelPercentResult" class="result-value text-xl">0.00 %</p></div>
-                                 <div class="md:col-span-2"><p class="font-semibold text-gray-600">Suggested Reinforcement:</p><p id="colReinforcementResult" class="result-value text-xl">-</p></div>
-                                 <div class="md:col-span-2"><p class="font-semibold text-gray-600">Status:</p><p id="colStatusResult" class="result-value text-2xl font-black">-</p></div>
+                         <div class="result-card p-5">
+                            <h3 class="text-xl font-bold text-gray-800">2. Material Grades</h3>
+                            <div class="mt-4 space-y-4">
+                                <div><label for="colFck" class="block text-sm font-medium text-gray-700">Concrete (fck)</label><select id="colFck" class="form-input mt-1"><option value="20">M20</option><option value="25" selected>M25</option></select></div>
+                                <div><label for="colFy" class="block text-sm font-medium text-gray-700">Steel (fy)</label><select id="colFy" class="form-input mt-1"><option value="415">Fe415</option><option value="500" selected>Fe500</option></select></div>
+                            </div>
+                            <button id="runColumnButton" class="run-button">Run Analysis</button>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="result-card">
+                            <h3 class="result-title text-2xl mb-4">Design Summary</h3>
+                             <div class="grid grid-cols-2 gap-4">
+                                <div><p class="font-semibold text-gray-600">Required Steel Area</p><p id="colSteelArea" class="result-value text-xl">-</p></div>
+                                <div><p class="font-semibold text-gray-600">Steel Percentage</p><p id="colSteelPercent" class="result-value text-xl">-</p></div>
+                                <div class="col-span-2"><p class="font-semibold text-gray-600">Suggested Reinforcement</p><p id="colReinforcement" class="result-value text-xl">-</p></div>
                              </div>
-                         </div>
-                         <div class="quantity-card">
-                             <h3 class="quantity-title text-2xl mb-4">Material Quantities</h3>
-                             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                 <div><p class="font-semibold text-gray-600">Concrete:</p><p id="colConcreteVol" class="quantity-value text-xl">-</p></div>
-                                 <div><p class="font-semibold text-gray-600">Cement:</p><p id="colCement" class="quantity-value text-xl">-</p></div>
-                                 <div><p class="font-semibold text-gray-600">Sand:</p><p id="colSand" class="quantity-value text-xl">-</p></div>
-                                 <div><p class="font-semibold text-gray-600">Aggregate:</p><p id="colAggregate" class="quantity-value text-xl">-</p></div>
-                                 <div class="col-span-2 md:col-span-4"><p class="font-semibold text-gray-600">Steel:</p><p id="colSteel" class="quantity-value text-xl">-</p></div>
+                        </div>
+                        <div id="colStatus" class="status-visual fail hidden"></div>
+                    </div>
+                 </div>
+            </div>
+
+            <!-- SLAB DESIGN TAB -->
+            <div id="slab-design" class="tab-content hidden">
+                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-1 space-y-4">
+                        <div class="result-card p-5">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">1. Slab Properties</h3>
+                            <div id="slab-visual" class="visual-box mb-4 h-48"></div>
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div><label for="slabLx" class="block text-sm font-medium text-gray-700">Short Span (m)</label><input type="number" id="slabLx" value="3.5" class="form-input mt-1"></div>
+                                    <div><label for="slabLy" class="block text-sm font-medium text-gray-700">Long Span (m)</label><input type="number" id="slabLy" value="5" class="form-input mt-1"></div>
+                                </div>
+                                <div><label for="slabLL" class="block text-sm font-medium text-gray-700">Live Load (kN/m²)</label><input type="number" id="slabLL" value="3" class="form-input mt-1"></div>
+                            </div>
+                        </div>
+                        <div class="result-card p-5">
+                             <h3 class="text-xl font-bold text-gray-800">2. Material Grades</h3>
+                            <div class="mt-4 space-y-4">
+                                <div><label for="slabFck" class="block text-sm font-medium text-gray-700">Concrete (fck)</label><select id="slabFck" class="form-input mt-1"><option value="20">M20</option><option value="25" selected>M25</option></select></div>
+                                <div><label for="slabFy" class="block text-sm font-medium text-gray-700">Steel (fy)</label><select id="slabFy" class="form-input mt-1"><option value="415">Fe415</option><option value="500" selected>Fe500</option></select></div>
+                            </div>
+                             <button id="runSlabButton" class="run-button">Run Analysis</button>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="result-card">
+                            <h3 class="result-title text-2xl mb-4">Design Summary</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><p class="font-semibold text-gray-600">Slab Type</p><p id="slabType" class="result-value text-xl">-</p></div>
+                                <div><p class="font-semibold text-gray-600">Required Depth</p><p id="slabDepth" class="result-value text-xl">-</p></div>
+                                <div><p class="font-semibold text-gray-600">Main Steel</p><p id="slabMainSteel" class="result-value text-xl">-</p></div>
+                                <div><p class="font-semibold text-gray-600">Distribution Steel</p><p id="slabDistSteel" class="result-value text-xl">-</p></div>
+                            </div>
+                        </div>
+                        <div id="slabStatus" class="status-visual fail hidden"></div>
+                        <div class="result-card quantity-card">
+                            <h3 class="result-title text-2xl mb-4">Material Quantities</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div><p class="font-semibold text-gray-600">Concrete Vol.</p><p id="slabConcreteVol" class="result-value text-xl">-</p></div>
+                                <div><p class="font-semibold text-gray-600">Cement</p><p id="slabCement" class="result-value text-xl">-</p></div>
+                                <div><p class="font-semibold text-gray-600">Sand</p><p id="slabSand" class="result-value text-xl">-</p></div>
+                                <div><p class="font-semibold text-gray-600">Aggregate</p><p id="slabAggregate" class="result-value text-xl">-</p></div>
+                            </div>
+                        </div>
+                    </div>
+                 </div>
+            </div>
+            
+            <!-- FOOTING DESIGN TAB -->
+            <div id="footing-design" class="tab-content hidden">
+                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-1 space-y-4">
+                        <div class="result-card p-5">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">1. Loads & Soil</h3>
+                            <div id="footing-visual" class="visual-box mb-4"></div>
+                            <div class="space-y-4">
+                                <div><label for="footingLoad" class="block text-sm font-medium text-gray-700">Service Load (kN)</label><input type="number" id="footingLoad" value="1200" class="form-input mt-1"></div>
+                                <div><label for="footingSBC" class="block text-sm font-medium text-gray-700">SBC (kN/m²)</label><input type="number" id="footingSBC" value="200" class="form-input mt-1"></div>
+                                <div><label for="footingDepth" class="block text-sm font-medium text-gray-700">Footing Depth (mm)</label><input type="number" id="footingDepth" value="400" class="form-input mt-1"></div>
+                                <div><label for="footingFck" class="block text-sm font-medium text-gray-700">Concrete Grade</label><select id="footingFck" class="form-input mt-1"><option value="20" selected>M20</option><option value="25">M25</option></select></div>
+                            </div>
+                             <button id="runFootingButton" class="run-button">Run Analysis</button>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="result-card">
+                            <h3 class="result-title text-2xl mb-4">Sizing Summary</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><p class="font-semibold text-gray-600">Required Area</p><p id="footingArea" class="result-value text-xl">-</p></div>
+                                <div><p class="font-semibold text-gray-600">Footing Size</p><p id="footingSize" class="result-value text-xl">-</p></div>
+                            </div>
+                        </div>
+                        <div class="result-card quantity-card">
+                            <h3 class="result-title text-2xl mb-4">Material Quantities</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div><p class="font-semibold text-gray-600">Concrete Vol.</p><p id="footingConcreteVol" class="result-value text-xl">-</p></div>
+                                <div><p class="font-semibold text-gray-600">Cement</p><p id="footingCement" class="result-value text-xl">-</p></div>
+                                <div><p class="font-semibold text-gray-600">Sand</p><p id="footingSand" class="result-value text-xl">-</p></div>
+                                <div><p class="font-semibold text-gray-600">Aggregate</p><p id="footingAggregate" class="result-value text-xl">-</p></div>
+                            </div>
+                        </div>
+                    </div>
+                 </div>
+            </div>
+
+            <!-- BBS TAB -->
+            <div id="bbs" class="tab-content hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-1 space-y-4">
+                        <div class="result-card p-5">
+                            <h3 class="text-xl font-bold text-gray-800">1. Beam Properties</h3>
+                            <div class="grid grid-cols-2 gap-4 mt-4">
+                                <div><label for="bbsLength" class="block text-sm font-medium text-gray-700">Length (m)</label><input type="number" id="bbsLength" value="6" class="form-input mt-1"></div>
+                                <div><label for="bbsWidth" class="block text-sm font-medium text-gray-700">Width (mm)</label><input type="number" id="bbsWidth" value="230" class="form-input mt-1"></div>
+                                <div><label for="bbsDepth" class="block text-sm font-medium text-gray-700">Depth (mm)</label><input type="number" id="bbsDepth" value="450" class="form-input mt-1"></div>
+                                <div><label for="bbsCover" class="block text-sm font-medium text-gray-700">Cover (mm)</label><input type="number" id="bbsCover" value="25" class="form-input mt-1"></div>
+                            </div>
+                        </div>
+                        <div class="result-card p-5">
+                             <h3 class="text-xl font-bold text-gray-800">2. Steel Details</h3>
+                             <div class="space-y-4 mt-4">
+                                <div><label class="block text-sm font-medium text-gray-700">Top Bars</label><div class="flex gap-2"><input type="number" id="bbsTopNum" value="2" class="form-input w-1/2 mt-1" placeholder="No."><input type="number" id="bbsTopDia" value="16" class="form-input w-1/2 mt-1" placeholder="Dia (mm)"></div></div>
+                                <div><label class="block text-sm font-medium text-gray-700">Bottom Bars</label><div class="flex gap-2"><input type="number" id="bbsBotNum" value="3" class="form-input w-1/2 mt-1" placeholder="No."><input type="number" id="bbsBotDia" value="16" class="form-input w-1/2 mt-1" placeholder="Dia (mm)"></div></div>
+                                <div><label class="block text-sm font-medium text-gray-700">Stirrups</label><div class="flex gap-2"><input type="number" id="bbsStirrupDia" value="8" class="form-input w-1/2 mt-1" placeholder="Dia (mm)"><input type="number" id="bbsStirrupSpacing" value="150" class="form-input w-1/2 mt-1" placeholder="Spacing (mm)"></div></div>
                              </div>
+                             <button id="runBBSButton" class="run-button">Run Analysis</button>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div id="bbs-visual-cs" class="result-card flex items-center justify-center p-4 min-h-[250px]"></div>
+                            <div id="bbs-visual-stirrup" class="result-card flex items-center justify-center p-4 min-h-[250px]"></div>
+                        </div>
+                         <div class="result-card overflow-x-auto">
+                            <h3 class="result-title text-2xl mb-4">Bar Bending Schedule</h3>
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-indigo-50 text-indigo-800"><tr><th class="p-2">Description</th><th class="p-2">Dia</th><th class="p-2">Cut Len</th><th class="p-2">No.</th><th class="p-2">Total Len</th><th class="p-2">Wt (kg)</th></tr></thead>
+                                <tbody id="bbs-table-body"></tbody>
+                            </table>
                          </div>
-                     </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- FOOTING SIZING TAB -->
-            <div id="footing-sizing" class="tab-content hidden space-y-6">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                     <div class="lg:col-span-1 space-y-4 p-5 bg-gray-50 rounded-xl border">
-                        <div id="footing-visual" class="w-full h-48 bg-white rounded-lg border flex items-center justify-center p-4 mb-4"></div>
-                         <h3 class="text-xl font-bold text-gray-800">1. Loads & Soil Properties</h3>
-                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Service Load from Column (P), kN</label>
-                            <input type="number" id="footingLoad" value="1200" min="10" class="form-input mt-1">
-                         </div>
-                          <div>
-                            <label class="block text-sm font-medium text-gray-700">Safe Bearing Capacity (SBC), kN/m²</label>
-                            <input type="number" id="footingSBC" value="200" min="50" class="form-input mt-1">
-                         </div>
-                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Footing Depth (Df), mm</label>
-                            <input type="number" id="footingDepth" value="400" min="150" step="50" class="form-input mt-1">
-                         </div>
-                         <div class="pt-4">
-                            <button id="runFootingSizing" class="run-button">Run Analysis</button>
+            <!-- STAIRCASE DESIGN TAB -->
+            <div id="staircase-design" class="tab-content hidden">
+                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-1 space-y-4">
+                        <div class="result-card p-5">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">1. Geometry</h3>
+                             <div id="staircase-visual" class="visual-box mb-4"></div>
+                            <div class="space-y-4">
+                                <div><label for="stairRiser" class="block text-sm font-medium text-gray-700">Riser (mm)</label><input type="number" id="stairRiser" value="150" class="form-input mt-1"></div>
+                                <div><label for="stairTread" class="block text-sm font-medium text-gray-700">Tread (mm)</label><input type="number" id="stairTread" value="275" class="form-input mt-1"></div>
+                                <div><label for="stairWidth" class="block text-sm font-medium text-gray-700">Width (m)</label><input type="number" id="stairWidth" value="1.2" class="form-input mt-1"></div>
+                                <div><label for="stairHeight" class="block text-sm font-medium text-gray-700">Floor Height (m)</label><input type="number" id="stairHeight" value="3.0" class="form-input mt-1"></div>
+                                <div><label for="stairFck" class="block text-sm font-medium text-gray-700">Concrete Grade</label><select id="stairFck" class="form-input mt-1"><option value="20" selected>M20</option><option value="25">M25</option></select></div>
+                            </div>
+                            <button id="runStaircaseButton" class="run-button">Run Analysis</button>
                         </div>
-                     </div>
-                     <div class="lg:col-span-2 space-y-6">
-                         <div class="result-card">
-                             <h3 class="result-title text-2xl mb-4">Isolated Footing Sizing</h3>
-                             <div class="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6">
-                                 <div><p class="font-semibold text-gray-600">Total Load (incl. self-weight):</p><p id="footingTotalLoad" class="result-value text-xl">0.00 kN</p></div>
-                                 <div><p class="font-semibold text-gray-600">Required Area:</p><p id="footingArea" class="result-value text-xl">0.00 m²</p></div>
-                                 <div class="md:col-span-2"><p class="font-semibold text-gray-600">Required Square Footing Size:</p><p id="footingSize" class="result-value text-2xl font-black">-</p></div>
-                             </div>
-                         </div>
-                         <div class="quantity-card">
-                             <h3 class="quantity-title text-2xl mb-4">Material Quantities</h3>
-                             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                 <div><p class="font-semibold text-gray-600">Concrete:</p><p id="footingConcreteVol" class="quantity-value text-xl">-</p></div>
-                                 <div><p class="font-semibold text-gray-600">Cement:</p><p id="footingCement" class="quantity-value text-xl">-</p></div>
-                                 <div><p class="font-semibold text-gray-600">Sand:</p><p id="footingSand" class="quantity-value text-xl">-</p></div>
-                                 <div><p class="font-semibold text-gray-600">Aggregate:</p><p id="footingAggregate" class="quantity-value text-xl">-</p></div>
-                                 <div class="col-span-2 md:col-span-4"><p class="font-semibold text-gray-600">Steel (Est.):</p><p id="footingSteel" class="quantity-value text-xl">-</p></div>
-                             </div>
-                             <p class="text-sm text-gray-500 mt-4">Note: Assumes M20 concrete & 0.8% steel for estimation.</p>
-                         </div>
-                     </div>
+                    </div>
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="result-card">
+                            <h3 class="result-title text-2xl mb-4">Design Summary</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><p class="font-semibold text-gray-600">No. of Risers</p><p id="stairNumRisers" class="result-value text-xl">-</p></div>
+                                <div><p class="font-semibold text-gray-600">No. of Treads</p><p id="stairNumTreads" class="result-value text-xl">-</p></div>
+                                <div><p class="font-semibold text-gray-600">Waist Slab Thickness</p><p id="stairSlabDepth" class="result-value text-xl">-</p></div>
+                                <div><p class="font-semibold text-gray-600">Max Bending Moment</p><p id="stairMaxMoment" class="result-value text-xl">-</p></div>
+                                <div><p class="font-semibold text-gray-600">Main Steel</p><p id="stairMainSteel" class="result-value text-xl">-</p></div>
+                                <div><p class="font-semibold text-gray-600">Distribution Steel</p><p id="stairDistSteel" class="result-value text-xl">-</p></div>
+                            </div>
+                        </div>
+                        <div id="stairStatus" class="status-visual fail hidden"></div>
+                        <div class="result-card quantity-card">
+                            <h3 class="result-title text-2xl mb-4">Material Quantities</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div><p class="font-semibold text-gray-600">Concrete Vol.</p><p id="stairConcreteVol" class="result-value text-xl">-</p></div>
+                                <div><p class="font-semibold text-gray-600">Cement</p><p id="stairCement" class="result-value text-xl">-</p></div>
+                                <div><p class="font-semibold text-gray-600">Sand</p><p id="stairSand" class="result-value text-xl">-</p></div>
+                                <div><p class="font-semibold text-gray-600">Aggregate</p><p id="stairAggregate" class="result-value text-xl">-</p></div>
+                            </div>
+                        </div>
+                    </div>
                  </div>
+            </div>
+
+            <!-- RETAINING WALL TAB -->
+            <div id="retaining-wall" class="tab-content hidden">
+                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-1 space-y-4">
+                        <div class="result-card p-5">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">1. Properties</h3>
+                            <div id="retaining-wall-visual" class="visual-box mb-4"></div>
+                            <div class="space-y-4">
+                                <div><label for="wallHeight" class="block text-sm font-medium text-gray-700">Retained Height (m)</label><input type="number" id="wallHeight" value="4" class="form-input mt-1"></div>
+                                <div><label for="soilDensity" class="block text-sm font-medium text-gray-700">Soil Density (kN/m³)</label><input type="number" id="soilDensity" value="18" class="form-input mt-1"></div>
+                                <div><label for="soilAngle" class="block text-sm font-medium text-gray-700">Angle of Repose (°)</label><input type="number" id="soilAngle" value="30" class="form-input mt-1"></div>
+                                <div><label for="wallSBC" class="block text-sm font-medium text-gray-700">SBC (kN/m²)</label><input type="number" id="wallSBC" value="200" class="form-input mt-1"></div>
+                                <div><label for="wallFck" class="block text-sm font-medium text-gray-700">Concrete Grade</label><select id="wallFck" class="form-input mt-1"><option value="20" selected>M20</option><option value="25">M25</option></select></div>
+                            </div>
+                             <button id="runWallButton" class="run-button">Run Analysis</button>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="result-card">
+                            <h3 class="result-title text-2xl mb-4">Stability Check</h3>
+                            <div class="grid grid-cols-2 gap-y-4">
+                                <div><p class="font-semibold text-gray-600">Max Base Pressure</p><p id="wallMaxPressure" class="result-value text-xl">-</p></div>
+                                <div><p class="font-semibold text-gray-600">Min Base Pressure</p><p id="wallMinPressure" class="result-value text-xl">-</p></div>
+                                <div id="wallFOS_OT" class="status-visual fail hidden col-span-2"></div>
+                                <div id="wallFOS_SL" class="status-visual fail hidden col-span-2"></div>
+                            </div>
+                        </div>
+                        <div class="result-card">
+                            <h3 class="result-title text-2xl mb-4">Stem Reinforcement</h3>
+                            <p id="wallStemSteel" class="result-value text-xl">-</p>
+                        </div>
+                        <div class="result-card quantity-card">
+                            <h3 class="result-title text-2xl mb-4">Material Quantities (per m length)</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div><p class="font-semibold text-gray-600">Concrete Vol.</p><p id="wallConcreteVol" class="result-value text-xl">-</p></div>
+                                <div><p class="font-semibold text-gray-600">Cement</p><p id="wallCement" class="result-value text-xl">-</p></div>
+                                <div><p class="font-semibold text-gray-600">Sand</p><p id="wallSand" class="result-value text-xl">-</p></div>
+                                <div><p class="font-semibold text-gray-600">Aggregate</p><p id="wallAggregate" class="result-value text-xl">-</p></div>
+                            </div>
+                        </div>
+                    </div>
+                 </div>
+            </div>
+            
+            <!-- WATER TANK TAB -->
+            <div id="water-tank" class="tab-content hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-1 space-y-4">
+                        <div class="result-card p-5">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">1. Tank Properties</h3>
+                            <div id="water-tank-visual" class="visual-box mb-4"></div>
+                            <div class="space-y-4">
+                                <div><label for="tankLength" class="block text-sm font-medium text-gray-700">Length (m)</label><input type="number" id="tankLength" value="5" class="form-input mt-1"></div>
+                                <div><label for="tankWidth" class="block text-sm font-medium text-gray-700">Width (m)</label><input type="number" id="tankWidth" value="4" class="form-input mt-1"></div>
+                                <div><label for="tankHeight" class="block text-sm font-medium text-gray-700">Height (m)</label><input type="number" id="tankHeight" value="3" class="form-input mt-1"></div>
+                            </div>
+                            <button id="runTankButton" class="run-button">Run Analysis</button>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2 space-y-6">
+                         <div class="result-card">
+                            <h3 class="result-title text-2xl mb-4">Wall Design Summary</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><p class="font-semibold text-gray-600">Max Hoop Tension</p><p id="tankHoopTension" class="result-value text-xl">-</p></div>
+                                <div><p class="font-semibold text-gray-600">Max Bending Moment</p><p id="tankBendingMoment" class="result-value text-xl">-</p></div>
+                                <div class="col-span-2"><p class="font-semibold text-gray-600">Required Wall Steel</p><p id="tankWallSteel" class="result-value text-xl">-</p></div>
+                            </div>
+                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HISTORY TAB -->
+            <div id="history" class="tab-content hidden">
+                <div class="result-card text-center">
+                    <h3 class="result-title text-2xl mb-2">History</h3>
+                    <p class="text-gray-600">This feature to save and view past calculations is coming soon!</p>
+                </div>
+            </div>
+
+            <!-- IS CODES CARD -->
+            <div class="result-card mt-8">
+                <h3 class="result-title text-2xl mb-4">Referenced Indian Standard (IS) Codes</h3>
+                <ul class="list-disc list-inside text-gray-700 space-y-1">
+                    <li><b>IS 456:2000</b> - Plain and Reinforced Concrete - Code of Practice.</li>
+                    <li><b>IS 875 (Part 1-5)</b> - Code of Practice for Design Loads.</li>
+                    <li><b>IS 13920:2016</b> - Ductile Design and Detailing of Reinforced Concrete Structures.</li>
+                    <li><b>SP 34</b> - Handbook on Concrete Reinforcement and Detailing.</li>
+                </ul>
             </div>
         </div>
     </main>
     
-    <footer class="text-center text-sm text-gray-500 py-8">
-        <p>Developed by Arif Ahmad Civil Engineer | email: <a href="mailto:aarif907@gmail.com" class="text-indigo-600 hover:underline">aarif907@gmail.com</a></p>
-    </footer>
-
-    <!-- Custom Message Box -->
-    <div id="messageBox" class="fixed inset-0 bg-gray-800 bg-opacity-60 hidden items-center justify-center p-4 z-50">
-        <div class="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full">
-            <h4 id="messageTitle" class="text-2xl font-bold text-red-600 mb-4">Error</h4>
-            <p id="messageText" class="text-gray-700 mb-6"></p>
-            <button onclick="closeMessage()" class="w-full bg-indigo-600 text-white font-semibold py-2 rounded-lg hover:bg-indigo-700">OK</button>
-        </div>
-    </div>
-
-
     <script>
         // --- UTILITY FUNCTIONS ---
         const getVal = (id) => parseFloat(document.getElementById(id).value);
         const getEl = (id) => document.getElementById(id);
         const setHTML = (id, text) => getEl(id).innerHTML = text;
 
-        function showMessage(title, message) {
-            setHTML('messageTitle', title);
-            setHTML('messageText', message);
-            getEl('messageBox').classList.remove('hidden');
-            getEl('messageBox').classList.add('flex');
-        }
-
-        function closeMessage() {
-            getEl('messageBox').classList.add('hidden');
-            getEl('messageBox').classList.remove('flex');
-        }
-
         // --- TAB SWITCHING LOGIC ---
         document.addEventListener('DOMContentLoaded', () => {
             const tabs = document.querySelectorAll('.tab-button');
             const contents = document.querySelectorAll('.tab-content');
-
             tabs.forEach(tab => {
                 tab.addEventListener('click', () => {
                     tabs.forEach(item => item.classList.remove('active'));
                     tab.classList.add('active');
-                    
                     const target = tab.getAttribute('data-tab');
                     contents.forEach(content => {
                         content.classList.add('hidden');
-                        if (content.id === target) {
-                            content.classList.remove('hidden');
-                        }
+                        if (content.id === target) content.classList.remove('hidden');
                     });
-                     runAllAnalyses();
+                    runActiveAnalysis();
                 });
             });
-            // Initial run on page load
-            runAllAnalyses();
+            runActiveAnalysis(); // Initial run to draw default visuals
         });
-
-        // --- MASTER ANALYSIS FUNCTION ---
-        function runAllAnalyses() {
-            runBeamAnalysis();
-            runSlabDesign();
-            runColumnDesign();
-            runFootingSizing();
-        }
-
-        // --- MATERIAL QUANTITY CALCULATION ---
-        function getMaterialQuantities(volume, fck, steelWeight) {
-            if (isNaN(volume) || volume <= 0) return { concrete: '-', cement: '-', sand: '-', aggregate: '-', steel: '-'};
-
-            const mixRatios = { 20: [1, 1.5, 3], 25: [1, 1, 2], 30: [1, 1, 2] }; // M20, M25, M30
-            const ratio = mixRatios[fck] || mixRatios[25];
-            const sumOfRatio = ratio.reduce((a, b) => a + b, 0);
-            
-            const dryVolume = volume * 1.54;
-            const cementVolume = (dryVolume * ratio[0]) / sumOfRatio;
-            const cementBags = Math.ceil((cementVolume * 1440) / 50); // 1440 kg/m3 density, 50kg/bag
-            const sand = ((dryVolume * ratio[1]) / sumOfRatio).toFixed(2);
-            const aggregate = ((dryVolume * ratio[2]) / sumOfRatio).toFixed(2);
-            
-            return {
-                concrete: `${volume.toFixed(2)} m³`,
-                cement: `${cementBags} bags`,
-                sand: `${sand} m³`,
-                aggregate: `${aggregate} m³`,
-                steel: `${steelWeight.toFixed(2)} kg`
+        
+        function runActiveAnalysis() {
+            const activeTab = document.querySelector('.tab-button.active').getAttribute('data-tab');
+            const analysisFunctions = {
+                'beam-analysis': runBeamAnalysis, 'column-design': runColumnDesign,
+                'slab-design': runSlabDesign, 'footing-design': runFootingDesign,
+                'bbs': runBBS, 'staircase-design': runStaircaseDesign,
+                'retaining-wall': runRetainingWallDesign, 'water-tank': runWaterTankDesign,
             };
+            if (analysisFunctions[activeTab]) analysisFunctions[activeTab]();
         }
 
-        // --- SVG VISUALIZATION ---
+        function updateStatusVisual(elementId, isSafe, message) {
+            const el = getEl(elementId);
+            el.classList.remove('hidden', 'pass', 'fail');
+            el.classList.add(isSafe ? 'pass' : 'fail');
+            const icon = isSafe 
+                ? `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`
+                : `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
+            el.innerHTML = `${icon}<span>${message}</span>`;
+        }
+        
+        // --- EVENT LISTENERS FOR RUN BUTTONS ---
+        document.getElementById('runBeamButton').addEventListener('click', runBeamAnalysis);
+        document.getElementById('runColumnButton').addEventListener('click', runColumnDesign);
+        document.getElementById('runSlabButton').addEventListener('click', runSlabDesign);
+        document.getElementById('runFootingButton').addEventListener('click', runFootingDesign);
+        document.getElementById('runBBSButton').addEventListener('click', runBBS);
+        document.getElementById('runStaircaseButton').addEventListener('click', runStaircaseDesign);
+        document.getElementById('runWallButton').addEventListener('click', runRetainingWallDesign);
+        document.getElementById('runTankButton').addEventListener('click', runWaterTankDesign);
+
+
+        // --- VISUALIZATION ---
         function drawBeamVisual() {
-            const L = getVal('beamLength');
+            const L = getVal('beamLength') || 0;
             const type = getEl('beamType').value;
-            const w = getVal('beamUDL');
             const container = getEl('beam-visual');
-            
-            let svg = `<svg viewBox="0 0 300 60" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">`;
-            svg += `<line x1="20" y1="30" x2="280" y2="30" stroke="#374151" stroke-width="2"/>`;
-
+            let svg = `<svg viewBox="0 -15 300 80" class="w-full h-full">`;
+            svg += `<line x1="20" y1="30" x2="280" y2="30" stroke="#374151" stroke-width="2.5"/>`; // Beam line
             if (type === 'simply-supported') {
-                svg += `<path d="M 20 30 L 15 40 L 25 40 Z" fill="#4f46e5"/>`;
-                svg += `<path d="M 280 30 L 275 40 L 285 40 Z" fill="#4f46e5"/>`;
-                svg += `<line x1="270" y1="42" x2="290" y2="42" stroke="#4f46e5" stroke-width="1"/>`;
+                svg += `<path d="M 20 30 L 15 45 L 25 45 Z" fill="#4f46e5"/>`;
+                svg += `<path d="M 280 30 L 275 45 L 285 45 Z" fill="#4f46e5"/>`;
+                svg += `<line x1="270" y1="47" x2="290" y2="47" stroke="#4f46e5" stroke-width="1.5"/>`;
             } else {
-                svg += `<rect x="10" y="20" width="10" height="20" fill="#4f46e5"/>`;
+                svg += `<rect x="5" y="15" width="15" height="30" fill="#4f46e5" stroke="#312e81" stroke-width="1"/>`;
             }
+            // Dimension line
+            svg += `<line x1="20" y1="60" x2="280" y2="60" stroke="#6b7280" stroke-width="1"/>`;
+            svg += `<line x1="20" y1="55" x2="20" y2="65" stroke="#6b7280" stroke-width="1"/>`;
+            svg += `<line x1="280" y1="55" x2="280" y2="65" stroke="#6b7280" stroke-width="1"/>`;
+            svg += `<text x="150" y="55" font-size="12" text-anchor="middle" fill="#1f2937">L = ${L.toFixed(1)} m</text>`;
+            svg += `</svg>`;
+            container.innerHTML = svg;
+        }
 
-            if (w > 0) {
-                 for(let i = 0; i < 10; i++) {
-                     svg += `<line x1="${20 + i*26}" y1="20" x2="${20 + i*26}" y2="30" stroke="#16a34a" stroke-width="1"/>`;
-                 }
-                 svg += `<line x1="20" y1="20" x2="280" y2="20" stroke="#16a34a" stroke-width="1.5"/>`;
+        function drawColumnVisual() {
+            const b = getVal('colWidth') || 0, D = getVal('colDepth') || 0;
+            const reinfText = getEl('colReinforcement').textContent;
+            const numBars = parseInt(reinfText.split(' ')[0]) || 4;
+            const container = getEl('column-visual');
+            if(isNaN(b) || isNaN(D)) return;
+            const scale = 120 / Math.max(b, D);
+            const w = b * scale, h = D * scale;
+            let svg = `<svg viewBox="-35 -35 ${w+70} ${h+70}" class="w-full h-full"><rect x="0" y="0" width="${w}" height="${h}" fill="#e5e7eb" stroke="#4b5563" stroke-width="1.5"/>`;
+            // Bars
+            const barRadius = 3;
+            if (numBars >= 4) {
+                svg += `<circle cx="${barRadius*2}" cy="${barRadius*2}" r="${barRadius}" fill="#4338ca"/>`;
+                svg += `<circle cx="${w-barRadius*2}" cy="${barRadius*2}" r="${barRadius}" fill="#4338ca"/>`;
+                svg += `<circle cx="${barRadius*2}" cy="${h-barRadius*2}" r="${barRadius}" fill="#4338ca"/>`;
+                svg += `<circle cx="${w-barRadius*2}" cy="${h-barRadius*2}" r="${barRadius}" fill="#4338ca"/>`;
             }
-
-            document.querySelectorAll('.point-load-row').forEach(row => {
-                const P = parseFloat(row.querySelector('.point-load-p').value);
-                const x = parseFloat(row.querySelector('.point-load-x').value);
-                if (!isNaN(P) && !isNaN(x) && x >= 0 && x <= L) {
-                    const pos = 20 + (x/L) * 260;
-                    svg += `<path d="M ${pos} 10 L ${pos-4} 20 L ${pos+4} 20 Z" fill="#ef4444"/>`;
-                    svg += `<line x1="${pos}" y1="20" x2="${pos}" y2="30" stroke="#ef4444" stroke-width="1.5"/>`;
-                }
-            });
-
+             if (numBars >= 6) {
+                svg += `<circle cx="${w/2}" cy="${barRadius*2}" r="${barRadius}" fill="#4338ca"/>`;
+                svg += `<circle cx="${w/2}" cy="${h-barRadius*2}" r="${barRadius}" fill="#4338ca"/>`;
+            }
+             if (numBars >= 8) {
+                svg += `<circle cx="${barRadius*2}" cy="${h/2}" r="${barRadius}" fill="#4338ca"/>`;
+                svg += `<circle cx="${w-barRadius*2}" cy="${h/2}" r="${barRadius}" fill="#4338ca"/>`;
+            }
+            // Dimensions
+            svg += `<text x="${w/2}" y="-15" font-size="10" text-anchor="middle" fill="#1f2937">${b} mm</text>`;
+            svg += `<text x="-15" y="${h/2}" font-size="10" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 -15,${h/2})">${D} mm</text>`;
             svg += `</svg>`;
             container.innerHTML = svg;
         }
 
         function drawSlabVisual() {
-            const Lx = getVal('slabLx');
-            const Ly = getVal('slabLy');
+            const Lx = getVal('slabLx') || 0, Ly = getVal('slabLy') || 0;
             const container = getEl('slab-visual');
+            if(isNaN(Lx) || isNaN(Ly) || Lx<=0 || Ly<=0) return;
             const ratio = Ly/Lx;
             const isTwoWay = ratio <= 2;
-            const w = 200, h = 200 * (Ly/Lx);
-            const viewBoxH = Math.max(220, h+20);
-
-            let svg = `<svg viewBox="0 -10 220 ${viewBoxH}" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">`;
-            svg += `<rect x="10" y="0" width="${w}" height="${h}" fill="#eef2ff" stroke="#4f46e5" stroke-width="1"/>`;
-            svg += `<text x="${10+w/2}" y="-2" font-size="8" text-anchor="middle">Ly = ${Ly}m</text>`;
-            svg += `<text x="5" y="${h/2}" font-size="8" dominant-baseline="middle" text-anchor="end" transform="rotate(-90 5,${h/2})">Lx = ${Lx}m</text>`;
-            
+            const w = 180, h = 180 / ratio;
+            let svg = `<svg viewBox="-40 -40 ${w+80} ${h+80}" class="w-full h-full">`;
+            svg += `<rect x="0" y="0" width="${w}" height="${h}" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>`;
             const spacing = 15;
-            for(let i = spacing; i < w; i+=spacing) {
-                svg += `<line x1="${10+i}" y1="0" x2="${10+i}" y2="${h}" stroke="#3b82f6" stroke-width="0.75"/>`;
-            }
-            for(let i = spacing; i < h; i+=spacing) {
-                svg += `<line x1="10" y1="${i}" x2="${10+w}" y2="${i}" stroke="${isTwoWay ? '#3b82f6' : '#ef4444'}" stroke-width="${isTwoWay ? '0.75' : '0.5'}" ${isTwoWay ? '' : 'stroke-dasharray="2,2"'} />`;
-            }
-            svg += '</svg>';
-            container.innerHTML = svg;
-        }
-
-        function drawColumnVisual() {
-            const b = getVal('colWidth');
-            const D = getVal('colDepth');
-            const h_m = getVal('colHeight');
-            const asc = parseFloat(getEl('colSteelAreaResult').textContent) || 0;
-            const container = getEl('column-visual');
-
-            const scale = 200 / Math.max(b, D);
-            const w = b * scale, h = D * scale;
-            
-            let svg = `<svg viewBox="-20 -20 240 ${h+40}" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">`;
-            svg += `<rect x="0" y="0" width="${w}" height="${h}" fill="#e5e7eb" stroke="#4b5563" stroke-width="1"/>`;
-            svg += `<rect x="5" y="5" width="${w-10}" height="${h-10}" fill="none" stroke="#6b7280" stroke-width="0.75"/>`;
-            svg += `<text x="${w/2}" y="-5" font-size="8" text-anchor="middle">b = ${b}mm</text>`;
-            svg += `<text x="-5" y="${h/2}" font-size="8" dominant-baseline="middle" text-anchor="end" transform="rotate(-90 -5,${h/2})">D = ${D}mm</text>`;
-            
-            if(asc > 0) {
-                 const numBarsText = getEl('colReinforcementResult').textContent;
-                 const numBars = parseFloat(numBarsText.split(' ')[0]) || 4;
-                 const dia = parseFloat(numBarsText.split('T')[1]) || 12;
-                 const barR = dia * scale / 2;
-
-                 if (numBars === 4) {
-                    svg += `<circle cx="10" cy="10" r="${barR}" fill="#4338ca"/>`;
-                    svg += `<circle cx="${w-10}" cy="10" r="${barR}" fill="#4338ca"/>`;
-                    svg += `<circle cx="10" cy="${h-10}" r="${barR}" fill="#4338ca"/>`;
-                    svg += `<circle cx="${w-10}" cy="${h-10}" r="${barR}" fill="#4338ca"/>`;
-                 } else if (numBars === 6) {
-                    svg += `<circle cx="10" cy="10" r="${barR}" fill="#4338ca"/>`;
-                    svg += `<circle cx="${w-10}" cy="10" r="${barR}" fill="#4338ca"/>`;
-                    svg += `<circle cx="10" cy="${h/2}" r="${barR}" fill="#4338ca"/>`;
-                    svg += `<circle cx="${w-10}" cy="${h/2}" r="${barR}" fill="#4338ca"/>`;
-                    svg += `<circle cx="10" cy="${h-10}" r="${barR}" fill="#4338ca"/>`;
-                    svg += `<circle cx="${w-10}" cy="${h-10}" r="${barR}" fill="#4338ca"/>`;
-                 } else if (numBars >= 8) {
-                    svg += `<circle cx="10" cy="10" r="${barR}" fill="#4338ca"/>`;
-                    svg += `<circle cx="${w-10}" cy="10" r="${barR}" fill="#4338ca"/>`;
-                    svg += `<circle cx="10" cy="${h-10}" r="${barR}" fill="#4338ca"/>`;
-                    svg += `<circle cx="${w-10}" cy="${h-10}" r="${barR}" fill="#4338ca"/>`;
-                    svg += `<circle cx="${w/2}" cy="10" r="${barR}" fill="#4338ca"/>`;
-                    svg += `<circle cx="${w/2}" cy="${h-10}" r="${barR}" fill="#4338ca"/>`;
-                    svg += `<circle cx="10" cy="${h/2}" r="${barR}" fill="#4338ca"/>`;
-                    svg += `<circle cx="${w-10}" cy="${h/2}" r="${barR}" fill="#4338ca"/>`;
-                 }
-            }
-
-            svg += '</svg>';
+            for(let i = spacing; i < w; i+=spacing) { svg += `<line x1="${i}" y1="0" x2="${i}" y2="${h}" stroke="#3b82f6" stroke-width="0.75"/>`; }
+            if(isTwoWay) { for(let i = spacing; i < h; i+=spacing) { svg += `<line x1="0" y1="${i}" x2="${w}" y2="${i}" stroke="#3b82f6" stroke-width="0.75" stroke-dasharray="3"/>`; } }
+            // Dimensions
+            svg += `<text x="${w/2}" y="-15" font-size="10" text-anchor="middle" fill="#1f2937">Ly = ${Ly.toFixed(1)} m</text>`;
+            svg += `<text x="-15" y="${h/2}" font-size="10" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 -15,${h/2})">Lx = ${Lx.toFixed(1)} m</text>`;
+            svg += `</svg>`;
             container.innerHTML = svg;
         }
 
         function drawFootingVisual() {
             const sizeText = getEl('footingSize').textContent;
-            const Df = getVal('footingDepth');
-            const container = getEl('footing-visual');
             const side = parseFloat(sizeText.split('m')[0]) || 0;
-            
-            let svg = `<svg viewBox="-20 -20 240 240" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">`;
-            svg += `<rect x="0" y="0" width="200" height="200" fill="#e5e7eb" stroke="#4b5563" stroke-width="1"/>`;
-            svg += `<rect x="75" y="75" width="50" height="50" fill="#d1d5db" stroke="#6b7280" stroke-width="0.5"/>`;
-
-            if(side > 0) {
-                 svg += `<text x="100" y="-5" font-size="10" text-anchor="middle">${side.toFixed(1)} m</text>`;
-                 svg += `<text x="-5" y="100" font-size="10" dominant-baseline="middle" text-anchor="end" transform="rotate(-90 -5,100)">${side.toFixed(1)} m</text>`;
-            }
-            svg += '</svg>';
+            const container = getEl('footing-visual');
+            if (isNaN(side) || side <= 0) return;
+            let svg = `<svg viewBox="-30 -30 160 160" class="w-2/3 h-2/3">`;
+            svg += `<rect x="0" y="0" width="100" height="100" fill="#e5e7eb" stroke="#4b5563"/>`;
+            svg += `<rect x="35" y="35" width="30" height="30" fill="#d1d5db" stroke="#6b7280"/>`;
+            // Dimension lines
+            svg += `<g stroke="#1f2937" stroke-width="1" font-size="10" text-anchor="middle">`;
+            svg += `<line x1="0" y1="-10" x2="100" y2="-10"/><line x1="0" y1="-5" x2="0" y2="-15"/><line x1="100" y1="-5" x2="100" y2="-15"/>`;
+            svg += `<text x="50" y="-20">${side.toFixed(1)}m</text>`;
+            svg += `</g></svg>`;
             container.innerHTML = svg;
         }
 
-        // --- BEAM ANALYSIS ---
-        function addPointLoad() {
-            const container = getEl('pointLoadsContainer');
-            const newRow = document.createElement('div');
-            newRow.className = 'point-load-row grid grid-cols-11 gap-2 items-center mt-1';
-            newRow.innerHTML = `
-                <input type="number" placeholder="Load (kN)" class="form-input col-span-5 point-load-p">
-                <input type="number" placeholder="Dist (m)" class="form-input col-span-5 point-load-x">
-                <button class="text-red-500 hover:text-red-700 col-span-1" onclick="removePointLoad(this)">✖</button>`;
-            container.appendChild(newRow);
+        function drawStaircaseVisual() {
+            const R = getVal('stairRiser') || 0, T = getVal('stairTread') || 0;
+            const D = parseFloat(getEl('stairSlabDepth').textContent) || 150;
+            const numTreads = parseInt(getEl('stairNumTreads').textContent) || 10;
+            const container = getEl('staircase-visual');
+            if(isNaN(R) || isNaN(T) || isNaN(numTreads) || numTreads <= 0 || T === 0) return;
+            
+            const scale = 100 / (numTreads * T);
+            const r_s = R * scale, t_s = T * scale, d_s = D * scale;
+
+            let topPath = `M 0 ${r_s} L ${t_s} ${r_s} `;
+            for(let i=1; i<numTreads; i++) { topPath += `L ${i*t_s} ${(i+1)*r_s} L ${(i+1)*t_s} ${(i+1)*r_s} `; }
+            
+            const angle = Math.atan(R/T);
+            const bot_x_offset = d_s * Math.sin(angle);
+            const bot_y_offset = d_s * Math.cos(angle);
+
+            let svg = `<svg viewBox="-50 -30 ${numTreads*t_s+100} ${numTreads*r_s+70}" class="w-full h-full"><g transform="translate(10, ${numTreads*r_s+10}) scale(1, -1)">`;
+            // Steps and slab
+            svg += `<path d="M 0 0 L 0 ${r_s} ${topPath} L ${numTreads*t_s} 0 Z" fill="#e5e7eb"/>`;
+            svg += `<path d="M 0 0 L ${numTreads*t_s} 0 L ${numTreads*t_s - bot_x_offset} ${-bot_y_offset} L ${-bot_x_offset} ${-bot_y_offset} Z" fill="#e5e7eb" stroke="#4b5563" stroke-width="1.5"/>`;
+            svg += `<path d="M 0 0 L 0 ${r_s} ${topPath}" stroke="#4b5563" stroke-width="1.5" fill="none"/>`;
+            
+            // Dimensions
+            svg += `<g transform="scale(1,-1)" stroke="#1f2937" stroke-width="1" font-size="10" text-anchor="middle">`;
+            // Riser dimension
+            const riser_x = numTreads*t_s + 10;
+            const riser_y1 = -r_s * numTreads;
+            const riser_y2 = -r_s * (numTreads-1);
+            svg += `<line x1="${riser_x}" y1="${riser_y1}" x2="${riser_x+10}" y2="${riser_y1}"/><line x1="${riser_x}" y1="${riser_y2}" x2="${riser_x+10}" y2="${riser_y2}"/>`;
+            svg += `<line x1="${riser_x+5}" y1="${riser_y1}" x2="${riser_x+5}" y2="${riser_y2}"/>`;
+            svg += `<text x="${riser_x+25}" y="${(riser_y1 + riser_y2)/2 + 4}">${R}mm</text>`;
+            // Tread dimension
+            const tread_y = 10;
+            const tread_x1 = (numTreads-2)*t_s;
+            const tread_x2 = (numTreads-1)*t_s;
+            svg += `<line x1="${tread_x1}" y1="${tread_y-5}" x2="${tread_x1}" y2="${tread_y+5}"/><line x1="${tread_x2}" y1="${tread_y-5}" x2="${tread_x2}" y2="${tread_y+5}"/>`;
+            svg += `<line x1="${tread_x1}" y1="${tread_y}" x2="${tread_x2}" y2="${tread_y}"/>`;
+            svg += `<text x="${tread_x1 + t_s/2}" y="${tread_y+15}">${T}mm</text>`;
+            svg += `</g></g></svg>`;
+            container.innerHTML = svg;
         }
-        function removePointLoad(button) {
-            button.parentElement.remove();
+
+        function drawRetainingWallVisual() {
+            const H = getVal('wallHeight') || 0;
+            const container = getEl('retaining-wall-visual');
+            if(isNaN(H)) return;
+            const base = 0.6 * H, stem_top = 0.05 * H, stem_bot = 0.1 * H;
+            const scale = 100/H;
+            let svg = `<svg viewBox="-10 -20 ${base*scale+20} ${H*scale+30}" class="w-full h-full"><g transform="translate(0, ${H*scale}) scale(1, -1)">`;
+            svg += `<path d="M 0 0 L ${base*scale} 0 L ${base*scale} ${0.1*H*scale} L ${stem_bot*scale*1.5} ${0.1*H*scale} L ${stem_top*scale} ${H*scale} L 0 ${H*scale} Z" fill="#e5e7eb" stroke="#4b5563"/>`;
+            svg += `<text transform="scale(1,-1)" x="-8" y="-${H*scale/2}" font-size="8" text-anchor="middle" dominant-baseline="middle" transform="rotate(90 -8, -${H*scale/2})">H = ${H.toFixed(1)}m</text>`;
+            svg += `</g></svg>`;
+            container.innerHTML = svg;
+        }
+
+        function drawWaterTankVisual() {
+            const L = getVal('tankLength') || 0, W = getVal('tankWidth') || 0, H = getVal('tankHeight') || 0;
+            const container = getEl('water-tank-visual');
+            if([L,W,H].some(isNaN)) return;
+            const scale = 120 / Math.max(L,W,H);
+            const l=L*scale, w=W*scale*0.5, h=H*scale;
+            let svg = `<svg viewBox="-10 -10 ${l+w+20} ${h+w+20}" class="w-full h-full">`;
+            svg += `<path d="M 0 ${w} L ${l} ${w} L ${l+w} 0 L ${w} 0 Z" fill="#dbeafe" stroke="#93c5fd"/>`; // Base
+            svg += `<path d="M 0 ${w} L 0 ${w+h} L ${l} ${w+h} L ${l} ${w} Z" fill="#bfdbfe" stroke="#93c5fd"/>`; // Front
+            svg += `<path d="M ${l} ${w} L ${l} ${w+h} L ${l+w} ${h} L ${l+w} 0 Z" fill="#93c5fd" stroke="#60a5fa"/>`; // Side
+            svg += `<text x="${l/2}" y="${w+h+10}" font-size="8" text-anchor="middle">L=${L.toFixed(1)}m</text>`;
+            svg += `<text x="${l+w+5}" y="${h/2}" font-size="8" transform="rotate(25 ${l+w}, ${h/2})">W=${W.toFixed(1)}m</text>`;
+            svg += `</svg>`;
+            container.innerHTML = svg;
+        }
+        
+        // --- ALGORITHMS ---
+        // --- MATERIAL ESTIMATION ALGORITHM ---
+        function calculateMaterialQuantities(volume, grade) {
+            if (isNaN(volume) || volume <= 0 || isNaN(grade)) {
+                return { vol: '-', cement: '-', sand: '-', aggregate: '-' };
+            }
+            const mixRatios = { 20: [1, 1.5, 3], 25: [1, 1, 2], 30: [1, 1, 2] };
+            const ratio = mixRatios[grade] || mixRatios[20];
+            const sumOfRatio = ratio.reduce((a, b) => a + b, 0);
+            
+            const dryVolume = volume * 1.54; // Dry volume factor
+            const cementVolume = (dryVolume * ratio[0]) / sumOfRatio;
+            const cementBags = Math.ceil((cementVolume * 1440) / 50); // density 1440 kg/m3, 50kg/bag
+            
+            return {
+                vol: `${volume.toFixed(2)} m³`,
+                cement: `${cementBags} bags`,
+                sand: `${((dryVolume * ratio[1]) / sumOfRatio).toFixed(2)} m³`,
+                aggregate: `${((dryVolume * ratio[2]) / sumOfRatio).toFixed(2)} m³`
+            };
         }
 
         function runBeamAnalysis() {
             drawBeamVisual();
-            const L = getVal('beamLength');
-            const b = getVal('beamWidth')/1000;
-            const d = getVal('beamDepth')/1000;
-            const w = getVal('beamUDL');
-            const type = getEl('beamType').value;
+            const L = getVal('beamLength'), w = getVal('beamUDL'), type = getEl('beamType').value;
+            if (isNaN(L) || isNaN(w)) return;
 
-            if (isNaN(L) || L <= 0 || isNaN(b) || isNaN(d)) return;
+            let maxShear = 0, maxMoment = 0;
+            if (type === 'simply-supported') { maxShear = (w * L) / 2; maxMoment = (w * L * L) / 8; } 
+            else { maxShear = w * L; maxMoment = (w * L * L) / 2; }
+            setHTML('beamMaxShear', `${maxShear.toFixed(2)} kN`);
+            setHTML('beamMaxMoment', `${maxMoment.toFixed(2)} kNm`);
 
-             // --- Material Quantities ---
-            const concreteVolume = L * b * d;
-            const steelWeight = concreteVolume * 0.015 * 7850; // Assume 1.5% steel by volume, 7850 kg/m3 density
-            const quantities = getMaterialQuantities(concreteVolume, 25, steelWeight);
-            setHTML('beamConcreteVol', quantities.concrete);
-            setHTML('beamCement', quantities.cement);
-            setHTML('beamSand', quantities.sand);
-            setHTML('beamAggregate', quantities.aggregate);
-            setHTML('beamSteel', quantities.steel);
-
-            const pointLoads = [];
-            document.querySelectorAll('.point-load-row').forEach(row => {
-                const P = parseFloat(row.querySelector('.point-load-p').value);
-                const x = parseFloat(row.querySelector('.point-load-x').value);
-                if (!isNaN(P) && !isNaN(x) && x >= 0 && x <= L) {
-                    pointLoads.push({ P, x });
-                }
-            });
+            const sfdData = (type === 'simply-supported') 
+                ? [{x:0, y:maxShear}, {x:L/2, y:0}, {x:L, y:-maxShear}] 
+                : [{x:0, y:0}, {x:L, y:-maxShear}];
+            const bmdData = (type === 'simply-supported')
+                ? [{x:0, y:0}, {x:L/2, y:maxMoment}, {x:L, y:0}]
+                : [{x:0, y:0}, {x:L, y:-maxMoment}];
             
-            let Ra = 0, Rb = 0, Ma = 0;
-            
-            if (type === 'simply-supported') {
-                let totalMomentAboutB = (w * L * L) / 2;
-                let totalForce = w * L;
-                pointLoads.forEach(load => {
-                    totalMomentAboutB += load.P * (L - load.x);
-                    totalForce += load.P;
-                });
-                Ra = totalMomentAboutB / L;
-                Rb = totalForce - Ra;
-            } else { // Cantilever
-                let totalForce = w * L;
-                let totalMomentAboutA = (w * L * L) / 2;
-                pointLoads.forEach(load => {
-                    totalForce += load.P;
-                    totalMomentAboutA += load.P * load.x;
-                });
-                Ra = totalForce;
-                Ma = -totalMomentAboutA;
-            }
-
-            const criticalPoints = [0, L];
-            pointLoads.forEach(load => {
-                criticalPoints.push(load.x);
-                if (load.x > 0.001) criticalPoints.push(load.x - 0.001);
-                if (load.x < L - 0.001) criticalPoints.push(load.x + 0.001);
-            });
-            for(let i = 0; i <= 100; i++) criticalPoints.push(i * L / 100);
-
-            const plotPoints = [...new Set(criticalPoints)].filter(p => p >= 0 && p <= L).sort((a,b) => a - b);
-            const sfdData = [], bmdData = [];
-
-            plotPoints.forEach(x_pos => {
-                let V = 0, M = 0;
-                if (type === 'simply-supported') {
-                    V = Ra - w * x_pos;
-                    M = Ra * x_pos - (w * x_pos * x_pos) / 2;
-                    pointLoads.forEach(load => {
-                        if (load.x <= x_pos) { V -= load.P; M -= load.P * (x_pos - load.x); }
-                    });
-                } else {
-                    V = -w * x_pos;
-                    M = (-w * x_pos * x_pos) / 2;
-                    pointLoads.forEach(load => {
-                        if (load.x <= x_pos) { V -= load.P; M -= load.P * (x_pos - load.x); }
-                    });
-                }
-                sfdData.push({x: x_pos, y: V});
-                bmdData.push({x: x_pos, y: M});
-            });
-            
-            renderSimpleDiagram('sfd-visual', sfdData, 'kN', false, '#3b82f6');
-            renderSimpleDiagram('bmd-visual', bmdData, 'kNm', true, '#ef4444');
+            renderSimpleDiagram('sfd-visual', sfdData, false, '#3b82f6');
+            renderSimpleDiagram('bmd-visual', bmdData, true, '#ef4444');
         }
 
-        function renderSimpleDiagram(containerId, data, unit, invertY, color) {
+        function renderSimpleDiagram(containerId, data, invertY, color) {
             const container = getEl(containerId);
-            if (!container) return;
-
+            if (!container || data.length === 0) return;
             const L = data[data.length - 1].x;
+            if(L === 0) return;
             const yValues = data.map(p => p.y);
-            const yMax = Math.max(...yValues);
-            const yMin = Math.min(...yValues);
-            const magnitude = Math.max(Math.abs(yMax), Math.abs(yMin));
-            
-            if (magnitude === 0 && L > 0) {
-                container.innerHTML = `<svg viewBox="0 0 400 200" class="w-full h-full"><line x1="10" y1="100" x2="390" y2="100" stroke="#9ca3af" stroke-width="2"/></svg>`;
-                return;
-            }
+            const magnitude = Math.max(Math.abs(Math.max(...yValues)), Math.abs(Math.min(...yValues)));
+            if(magnitude === 0) return;
+            const yMax = magnitude * 1.15, yMin = -magnitude * 1.15;
 
             const toSvgX = (x) => 10 + (x / L) * 380;
-            const toSvgY = (y) => {
-                const scaledY = (y / magnitude) * 80; // Scale to fit in 160px height (80px up, 80px down)
-                return 100 - (invertY ? -scaledY : scaledY); // Center at 100px
-            };
+            const toSvgY = (y) => 100 - (y / yMax) * 80 * (invertY ? -1 : 1);
             
             let pathData = `M ${toSvgX(data[0].x)} ${toSvgY(data[0].y)}`;
-            data.forEach(point => {
-                pathData += ` L ${toSvgX(point.x)} ${toSvgY(point.y)}`;
-            });
+            for(let i=1; i<data.length; i++) {
+                if(data[i-1].x === data[i].x) { // Vertical line for point loads
+                    pathData += ` V ${toSvgY(data[i].y)}`;
+                } else {
+                     pathData += ` L ${toSvgX(data[i].x)} ${toSvgY(data[i].y)}`;
+                }
+            }
+
 
             const zeroLineY = toSvgY(0);
             const filledPath = pathData + ` L ${toSvgX(L)} ${zeroLineY} L ${toSvgX(0)} ${zeroLineY} Z`;
 
-            const svg = `
-                <svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
-                    <!-- Diagram Path -->
-                    <path d="${pathData}" stroke="${color}" stroke-width="2.5" fill="none"/>
-                    <!-- Fill Area -->
-                    <path d="${filledPath}" fill="${color}" fill-opacity="0.2"/>
-                    <!-- Zero Line -->
-                    <line x1="10" y1="${zeroLineY}" x2="390" y2="${zeroLineY}" stroke="#4b5563" stroke-width="1.5"/>
-                    <!-- Max/Min Labels -->
-                    <text x="15" y="${toSvgY(yMax) - 5}" font-size="12" fill="#111827" font-weight="600">${yMax.toFixed(2)} ${unit}</text>
-                    <text x="15" y="${toSvgY(yMin) + 15}" font-size="12" fill="#111827" font-weight="600">${yMin.toFixed(2)} ${unit}</text>
-                </svg>
-            `;
-            container.innerHTML = svg;
+            container.innerHTML = `<svg viewBox="0 0 400 200" class="w-full h-full">
+                <path d="${pathData}" stroke="${color}" stroke-width="2" fill="none"/><path d="${filledPath}" fill="${color}" fill-opacity="0.1"/>
+                <line x1="10" y1="${zeroLineY}" x2="390" y2="${zeroLineY}" stroke="#4b5563" stroke-width="1"/>
+                <text x="15" y="${toSvgY(Math.max(...yValues)) - 5}" font-size="12" fill="#111827">${Math.max(...yValues).toFixed(2)}</text>
+                <text x="15" y="${toSvgY(Math.min(...yValues)) + 15}" font-size="12" fill="#111827">${Math.min(...yValues).toFixed(2)}</text>
+            </svg>`;
         }
 
-
-        // --- SLAB DESIGN ---
-        function runSlabDesign() {
-            drawSlabVisual();
-            const Lx = getVal('slabLx'), Ly = getVal('slabLy');
-            const LL = getVal('slabLL'), fck = getVal('slabFck'), fy = getVal('slabFy');
-            if (isNaN(Lx) || isNaN(Ly) || isNaN(LL) || isNaN(fck) || isNaN(fy) || Lx <= 0 || Ly <=0) return;
-
-            const ratio = Ly / Lx;
-            const slabType = ratio > 2 ? 'One-Way Slab' : 'Two-Way Slab';
-            setHTML('slabTypeResult', `${slabType} (${ratio.toFixed(2)})`);
-
-            const depth = Math.ceil((Lx * 1000) / 35 / 10) * 10; // Using L/35 for a more conservative depth
-            const d_m = depth / 1000;
-            setHTML('slabDepthResult', `${depth} mm`);
-
-            const DL = d_m * 25 + 1.0; // self-weight + floor finish
-            const Wu = 1.5 * (DL + LL);
-            
-            const ratioMap = {1.0:0.062, 1.1:0.074, 1.2:0.084, 1.3:0.093, 1.4:0.099, 1.5:0.104, 1.75:0.113, 2.0:0.118};
-            const ratios = Object.keys(ratioMap).map(parseFloat);
-            const closestRatio = ratios.reduce((prev, curr) => (Math.abs(curr - ratio) < Math.abs(prev - ratio) ? curr : prev));
-            const alpha_x = ratio > 2 ? 0.125 : ratioMap[closestRatio];
-            const Mux = alpha_x * Wu * Lx * Lx;
-            
-            const d_eff = depth - 25; // effective depth
-            const Ast_req_main = (0.5 * fck / fy) * (1 - Math.sqrt(1 - (4.6 * Mux * 1e6) / (fck * 1000 * d_eff * d_eff))) * 1000 * d_eff;
-            const Ast_min = (fy === 250 ? 0.15 : 0.12) / 100 * 1000 * depth;
-
-            const Ast_main_provided = Math.max(Ast_req_main, Ast_min);
-            const spacing_main = Math.floor(( (Math.PI/4*10*10) * 1000) / Ast_main_provided / 10) * 10;
-            setHTML('slabMainSteelResult', `Provide T10 @ ${Math.min(spacing_main, 300, 3*d_eff)} mm c/c`);
-            
-            const Ast_dist_provided = Ast_min;
-            const spacing_dist = Math.floor(( (Math.PI/4*8*8) * 1000) / Ast_dist_provided / 10) * 10;
-            setHTML('slabDistSteelResult', `Provide T8 @ ${Math.min(spacing_dist, 300, 5*d_eff)} mm c/c`);
-
-            // --- Material Quantities ---
-            const concreteVolume = Lx * Ly * d_m;
-            const mainSteelTotalArea = Ast_main_provided * Ly; // Area per meter * length
-            const distSteelTotalArea = Ast_dist_provided * Lx; // Area per meter * length
-            const steelVolume = (mainSteelTotalArea + distSteelTotalArea) / (1000*1000); // mm2 to m2
-            const steelWeight = steelVolume * 7850; // 7850 kg/m3 density
-            const quantities = getMaterialQuantities(concreteVolume, fck, steelWeight);
-            setHTML('slabConcreteVol', quantities.concrete);
-            setHTML('slabCement', quantities.cement);
-            setHTML('slabSand', quantities.sand);
-            setHTML('slabAggregate', quantities.aggregate);
-            setHTML('slabSteel', quantities.steel);
-        }
-
-        // --- COLUMN DESIGN ---
         function runColumnDesign() {
-            const b = getVal('colWidth'), D = getVal('colDepth'), H = getVal('colHeight'), Pu_req = getVal('colPu');
+            const b = getVal('colWidth'), D = getVal('colDepth'), Pu = getVal('colPu');
             const fck = getVal('colFck'), fy = getVal('colFy');
-            if (isNaN(b) || isNaN(D) || isNaN(H) || isNaN(Pu_req) || isNaN(fck) || isNaN(fy)) {
-                drawColumnVisual(); return;
-            }
+            if(isNaN(b) || isNaN(D) || isNaN(Pu)) return;
 
             const Ag = b * D;
-            const Asc_req = (Pu_req * 1000 - 0.4 * fck * Ag) / (0.67 * fy - 0.4 * fck);
-            const final_Asc = Math.max(Asc_req, 0.008 * Ag); // Ensure minimum 0.8% steel
-            
-            setHTML('colSteelAreaResult', `${final_Asc > 0 ? final_Asc.toFixed(2) : 0} mm²`);
-            
-            const pt = (final_Asc / Ag) * 100;
-            setHTML('colSteelPercentResult', `${pt > 0 ? pt.toFixed(2) : 0.00} %`);
+            const Asc_req = (Pu * 1000 - 0.4 * fck * Ag) / (0.67 * fy - 0.4 * fck);
+            const Asc_min = 0.008 * Ag;
+            const Asc = Math.max(Asc_req, Asc_min);
+            const pt = (Asc / Ag) * 100;
 
-            let reinfText = "-";
-            let status = "SAFE";
-            let color = "text-green-600";
-            let numBars = 0, dia = 0;
+            setHTML('colSteelArea', `${Asc > 0 ? Asc.toFixed(2) : 'N/A'} mm²`);
+            setHTML('colSteelPercent', `${pt > 0 ? pt.toFixed(2) : 'N/A'} %`);
+            
+            let isSafe = true;
+            let statusMsg = `PASS (IS 456 Cl. 26.5.3.1)`;
+            let reinfText = '-';
 
-            if (pt > 6.0) {
-                status = "FAIL: Steel > 6.0%"; color = "text-red-600";
-                reinfText = "Increase column size.";
-            } else {
-                 const barDiams = [12, 16, 20, 25, 32];
-                 let bestOption = {num: 0, dia: 0, area: 0};
+            if (pt > 4) { // Cl. 26.5.3.1 (b) - changed from 6% to 4% for non-lapping areas
+                isSafe = false;
+                statusMsg = `FAIL (Steel % > 4.0%)`;
+            } else if (pt < 0.8) {
+                isSafe = false;
+                statusMsg = `FAIL (Steel % < 0.8%)`;
+            } else if (pt > 0) {
+                const barDiams = [12, 16, 20, 25, 32];
                  for(const d of barDiams) {
                      const area = Math.PI/4 * d * d;
-                     const n = Math.ceil(final_Asc / area);
-                     if (n >= 4 && n % 2 === 0) {
-                         bestOption = { num: n, dia: d, area: n * area };
-                         break;
-                     }
+                     const n = Math.ceil(Asc / area);
+                     if (n >= 4 && n % 2 === 0 && n <= 8) { reinfText = `${n} T${d}`; break; }
                  }
-                 numBars = bestOption.num;
-                 dia = bestOption.dia;
-                 reinfText = `${numBars} T${dia} (${bestOption.area.toFixed(0)} mm²)`;
             }
-            setHTML('colReinforcementResult', reinfText);
-
-            const statusEl = getEl('colStatusResult');
-            statusEl.textContent = status;
-            statusEl.className = `result-value text-2xl font-black ${color}`;
-            
-            // --- Material Quantities ---
-            const concreteVolume = (b/1000) * (D/1000) * H;
-            const mainSteelVolume = (final_Asc / (1000*1000)) * H;
-            // Estimate lateral ties as ~0.5% of concrete volume (a rough but common estimate)
-            const tiesVolume = concreteVolume * 0.005;
-            const steelWeight = (mainSteelVolume + tiesVolume) * 7850;
-            const quantities = getMaterialQuantities(concreteVolume, fck, steelWeight);
-            setHTML('colConcreteVol', quantities.concrete);
-            setHTML('colCement', quantities.cement);
-            setHTML('colSand', quantities.sand);
-            setHTML('colAggregate', quantities.aggregate);
-            setHTML('colSteel', quantities.steel);
-
+            setHTML('colReinforcement', reinfText);
+            updateStatusVisual('colStatus', isSafe, statusMsg);
             drawColumnVisual();
         }
+
+        function runSlabDesign() {
+            drawSlabVisual();
+            const Lx = getVal('slabLx'), Ly = getVal('slabLy'), LL = getVal('slabLL');
+            const fck = getVal('slabFck'), fy = getVal('slabFy');
+            if(isNaN(Lx) || isNaN(Ly) || isNaN(LL)) return;
+
+            const ratio = Ly / Lx;
+            const slabType = ratio > 2 ? 'One-Way' : 'Two-Way';
+            setHTML('slabType', `${slabType} (${ratio.toFixed(2)})`);
+
+            const depth = Math.ceil((Lx * 1000) / 35 / 10) * 10;
+            setHTML('slabDepth', `${depth} mm`);
+
+            const DL = (depth/1000) * 25 + 1.5;
+            const Wu = 1.5 * (DL + LL);
+            const alpha_x = ratio > 2 ? 0.125 : (0.104 - 0.024 * ratio);
+            const Mux = alpha_x * Wu * Lx * Lx;
+
+            const d_eff = depth - 25;
+            const Ast_req = (0.5*fck/fy)*(1-Math.sqrt(1-(4.6*Mux*1e6)/(fck*1000*d_eff*d_eff)))*1000*d_eff;
+            const Ast_min = (fy >= 415 ? 0.12 : 0.15) / 100 * 1000 * depth;
+            const Ast_main = Math.max(Ast_req, Ast_min);
+            const spacing_main = Math.floor((Math.PI/4*10*10*1000)/Ast_main);
+            const final_spacing = Math.min(spacing_main, 300, 3*d_eff);
+
+            setHTML('slabMainSteel', `T10 @ ${final_spacing} mm`);
+            setHTML('slabDistSteel', `T8 @ ${Math.min(300, 5*d_eff)} mm`);
+
+            const isSafe = final_spacing <= Math.min(300, 3*d_eff);
+            const statusMsg = isSafe ? `PASS (IS 456 Cl. 26.3.3)` : `FAIL (Spacing check)`;
+            updateStatusVisual('slabStatus', isSafe, statusMsg);
+            
+            // Material Estimation
+            const concreteVolume = Lx * Ly * (depth/1000);
+            const materials = calculateMaterialQuantities(concreteVolume, fck);
+            setHTML('slabConcreteVol', materials.vol);
+            setHTML('slabCement', materials.cement);
+            setHTML('slabSand', materials.sand);
+            setHTML('slabAggregate', materials.aggregate);
+        }
         
-        // --- FOOTING SIZING ---
-        function runFootingSizing() {
-            const P = getVal('footingLoad'), SBC = getVal('footingSBC'), Df = getVal('footingDepth')/1000;
-            if (isNaN(P) || isNaN(SBC) || isNaN(Df) || SBC <= 0) {
-                drawFootingVisual();
-                return;
-            }
-
-            const P_total = P * 1.10;
-            const Area_req = P_total / SBC;
+        function runFootingDesign() {
+            const P = getVal('footingLoad'), SBC = getVal('footingSBC');
+            const D = getVal('footingDepth'), fck = getVal('footingFck');
+            if(isNaN(P) || isNaN(SBC) || SBC <= 0 || isNaN(D)) return;
+            const Area_req = (P * 1.1) / SBC;
             const side = Math.ceil(Math.sqrt(Area_req) * 10) / 10;
-
-            setHTML('footingTotalLoad', `${P_total.toFixed(2)} kN`);
             setHTML('footingArea', `${Area_req.toFixed(2)} m²`);
             setHTML('footingSize', `${side.toFixed(1)}m x ${side.toFixed(1)}m`);
-
-            // --- Material Quantities ---
-            const concreteVolume = side * side * Df;
-            const steelWeight = concreteVolume * 0.008 * 7850; // Assume 0.8% steel for footing
-            const quantities = getMaterialQuantities(concreteVolume, 20, steelWeight); // Assume M20 for footing
-            setHTML('footingConcreteVol', quantities.concrete);
-            setHTML('footingCement', quantities.cement);
-            setHTML('footingSand', quantities.sand);
-            setHTML('footingAggregate', quantities.aggregate);
-            setHTML('footingSteel', quantities.steel);
+            
+            // Material Estimation
+            const concreteVolume = side * side * (D/1000);
+            const materials = calculateMaterialQuantities(concreteVolume, fck);
+            setHTML('footingConcreteVol', materials.vol);
+            setHTML('footingCement', materials.cement);
+            setHTML('footingSand', materials.sand);
+            setHTML('footingAggregate', materials.aggregate);
 
             drawFootingVisual();
         }
         
-        // --- EVENT LISTENERS FOR INPUTS AND BUTTONS ---
-        document.querySelectorAll('#beam-analysis input, #beam-analysis select').forEach(el => el.addEventListener('input', runBeamAnalysis));
-        document.querySelectorAll('#slab-design input, #slab-design select').forEach(el => el.addEventListener('input', runSlabDesign));
-        document.querySelectorAll('#column-design input, #column-design select').forEach(el => el.addEventListener('input', runColumnDesign));
-        document.querySelectorAll('#footing-sizing input, #footing-sizing select').forEach(el => el.addEventListener('input', runFootingSizing));
+        function runStaircaseDesign() {
+            const R = getVal('stairRiser'), T = getVal('stairTread'), W = getVal('stairWidth'), H = getVal('stairHeight');
+            const fck = getVal('stairFck');
+            if([R, T, W, H, fck].some(isNaN)) return;
+            
+            const numRisers = Math.round((H * 1000) / R);
+            const numTreads = numRisers - 1;
+            setHTML('stairNumRisers', numRisers);
+            setHTML('stairNumTreads', numTreads);
+
+            const check2RT = 2 * R + T;
+            let isSafe = true, statusMsg = `PASS (${check2RT}mm)`;
+            if (check2RT < 550 || check2RT > 700) {
+                isSafe = false;
+                statusMsg = `FAIL (${check2RT}mm is outside 550-700mm range)`;
+            }
+            updateStatusVisual('stairStatus', isSafe, statusMsg);
+
+            const going = numTreads * T / 1000;
+            const effSpan = going + W/2; 
+            const D_slab = Math.round(effSpan * 1000 / 25 / 10) * 10;
+            setHTML('stairSlabDepth', `${D_slab} mm`);
+
+            const slopeLen = Math.sqrt(R*R + T*T);
+            const waist_load = (D_slab/1000) * (slopeLen/T) * 25;
+            const step_load = 0.5 * (R/1000) * 25;
+            const DL = waist_load + step_load + 1.0;
+            const LL = 5.0; 
+            const Wu = 1.5 * (DL + LL);
+            const Mux = Wu * effSpan * effSpan / 8;
+            setHTML('stairMaxMoment', `${Mux.toFixed(2)} kNm/m`);
+            
+            const d_eff = D_slab - 25;
+            const Ast_req = (0.5*fck/500)*(1-Math.sqrt(1-(4.6*Mux*1e6)/(fck*1000*d_eff*d_eff)))*1000*d_eff;
+            const spacing_main = Math.floor((Math.PI/4*12*12*1000)/Ast_req);
+            setHTML('stairMainSteel', `T12 @ ${Math.min(spacing_main, 300)} mm`);
+            setHTML('stairDistSteel', `T8 @ 250 mm`);
+            
+            // Material Estimation
+            const waistSlabVol = (D_slab/1000) * W * Math.sqrt(going*going + H*H);
+            const stepsVol = 0.5 * (R/1000) * (T/1000) * W * numTreads;
+            const landingVol = W * W * (D_slab/1000); // Assuming square landing
+            const concreteVolume = waistSlabVol + stepsVol + landingVol;
+            const materials = calculateMaterialQuantities(concreteVolume, fck);
+            setHTML('stairConcreteVol', materials.vol);
+            setHTML('stairCement', materials.cement);
+            setHTML('stairSand', materials.sand);
+            setHTML('stairAggregate', materials.aggregate);
+
+            drawStaircaseVisual();
+        }
         
-        getEl('runBeamAnalysis').addEventListener('click', runBeamAnalysis);
-        getEl('runSlabDesign').addEventListener('click', runSlabDesign);
-        getEl('runColumnDesign').addEventListener('click', runColumnDesign);
-        getEl('runFootingSizing').addEventListener('click', runFootingSizing);
+        function runRetainingWallDesign() {
+            drawRetainingWallVisual();
+            const H = getVal('wallHeight'), gamma = getVal('soilDensity'), phi = getVal('soilAngle'), SBC = getVal('wallSBC');
+            const fck = getVal('wallFck');
+            if([H, gamma, phi, SBC, fck].some(isNaN)) return;
+
+            const baseWidth = 0.6 * H, base_d = 0.1*H;
+            const toe = 0.25 * baseWidth, heel = baseWidth - toe - 0.3;
+            const Ka = (1 - Math.sin(phi * Math.PI/180)) / (1 + Math.sin(phi * Math.PI/180));
+            const Pa = 0.5 * Ka * gamma * H * H;
+            
+            const OT_moment = Pa * (H/3);
+            const W_stem = 0.3 * H * 25;
+            const W_base = baseWidth * base_d * 25;
+            const W_soil = heel * H * gamma;
+            const Res_moment = W_stem * (toe + 0.15) + W_base * (baseWidth/2) + W_soil * (toe + 0.3 + heel/2);
+            
+            const FOS_OT = Res_moment / OT_moment;
+            const isOTSafe = FOS_OT > 1.55;
+            updateStatusVisual('wallFOS_OT', isOTSafe, `FOS Overturning = ${FOS_OT.toFixed(2)}`);
+
+            const totalVertical = W_stem + W_base + W_soil;
+            const FOS_SL = (0.5 * totalVertical) / Pa;
+             const isSLSafe = FOS_SL > 1.55;
+            updateStatusVisual('wallFOS_SL', isSLSafe, `FOS Sliding = ${FOS_SL.toFixed(2)}`);
+
+            const x_bar = (Res_moment - OT_moment) / totalVertical;
+            const e = baseWidth/2 - x_bar;
+            const Pmax = (totalVertical/baseWidth) * (1 + (6*e)/baseWidth);
+            const Pmin = (totalVertical/baseWidth) * (1 - (6*e)/baseWidth);
+            setHTML('wallMaxPressure', `${Pmax.toFixed(2)} kN/m²`);
+            setHTML('wallMinPressure', `${Pmin.toFixed(2)} kN/m²`);
+
+            const Mu_stem = 1.5 * (Pa * (H/3));
+            setHTML('wallStemSteel', `Requires ${Mu_stem.toFixed(2)} kNm moment capacity`);
+
+            // Material Estimation
+            const stemVol = 0.3 * H; // Per meter length
+            const baseVol = baseWidth * base_d; // Per meter length
+            const concreteVolume = stemVol + baseVol;
+            const materials = calculateMaterialQuantities(concreteVolume, fck);
+            setHTML('wallConcreteVol', materials.vol);
+            setHTML('wallCement', materials.cement);
+            setHTML('wallSand', materials.sand);
+            setHTML('wallAggregate', materials.aggregate);
+        }
+        
+        function runWaterTankDesign() {
+            drawWaterTankVisual();
+            const L = getVal('tankLength'), W = getVal('tankWidth'), H = getVal('tankHeight');
+            if([L,W,H].some(isNaN)) return;
+            const gamma_w = 9.81;
+            const T = gamma_w * H * L / 2;
+            setHTML('tankHoopTension', `${T.toFixed(2)} kN/m`);
+
+            const M_vert = (1/12) * gamma_w * H * H * H;
+            setHTML('tankBendingMoment', `${M_vert.toFixed(2)} kNm/m`);
+            
+            const sigma_st = 130;
+            const Ast_hoop = (T * 1000) / sigma_st;
+            setHTML('tankWallSteel', `Direct Tension Steel: ${Ast_hoop.toFixed(2)} mm²/m`);
+        }
+
+        function runBBS() {
+            const L = getVal('bbsLength'), W = getVal('bbsWidth'), D = getVal('bbsDepth'), cover = getVal('bbsCover');
+            const topNum = getVal('bbsTopNum'), topDia = getVal('bbsTopDia');
+            const botNum = getVal('bbsBotNum'), botDia = getVal('bbsBotDia');
+            const stDia = getVal('bbsStirrupDia'), stSpacing = getVal('bbsStirrupSpacing');
+            if ([L, W, D, cover, topNum, topDia, botNum, botDia, stDia, stSpacing].some(isNaN)) return;
+
+            const weight = (dia, len) => (dia * dia / 162.2) * len;
+            const hookLen = (dia) => 10 * dia;
+
+            const cutLenTop = (L*1000 - 2*cover + 2*hookLen(topDia)) / 1000;
+            const totalLenTop = cutLenTop * topNum;
+            const weightTop = weight(topDia, totalLenTop);
+            
+            const cutLenBot = (L*1000 - 2*cover + 2*hookLen(botDia)) / 1000;
+            const totalLenBot = cutLenBot * botNum;
+            const weightBot = weight(botDia, totalLenBot);
+
+            const a = W - 2 * cover, b = D - 2 * cover;
+            // IS 13920 seismic hook length and bend deductions
+            const hookLenSt = Math.max(6 * stDia, 75); 
+            const bendDeduct = (2 * 2 * stDia) + (2 * 3 * stDia); // 2x90deg bends, 2x135deg bends
+            const cutLenSt = (2 * (a + b) + 2 * hookLenSt - bendDeduct) / 1000;
+            const numStirrups = Math.floor((L * 1000 - 2*cover) / stSpacing) + 1;
+            const totalLenSt = cutLenSt * numStirrups;
+            const weightSt = weight(stDia, totalLenSt);
+
+            const tableBody = getEl('bbs-table-body');
+            tableBody.innerHTML = `
+                <tr class="border-b"><td class="p-2">Top Bars</td><td class="p-2">${topDia}</td><td class="p-2">${cutLenTop.toFixed(2)}</td><td class="p-2">${topNum}</td><td class="p-2">${totalLenTop.toFixed(2)}</td><td class="p-2">${weightTop.toFixed(2)}</td></tr>
+                <tr class="border-b"><td class="p-2">Bottom Bars</td><td class="p-2">${botDia}</td><td class="p-2">${cutLenBot.toFixed(2)}</td><td class="p-2">${botNum}</td><td class="p-2">${totalLenBot.toFixed(2)}</td><td class="p-2">${weightBot.toFixed(2)}</td></tr>
+                <tr class="border-b"><td class="p-2">Stirrups (Seismic Hooks)</td><td class="p-2">${stDia}</td><td class="p-2">${cutLenSt.toFixed(2)}</td><td class="p-2">${numStirrups}</td><td class="p-2">${totalLenSt.toFixed(2)}</td><td class="p-2">${weightSt.toFixed(2)}</td></tr>
+                <tr class="font-bold bg-gray-50"><td class="p-2" colspan="5">Total Weight</td><td class="p-2">${(weightTop + weightBot + weightSt).toFixed(2)}</td></tr>`;
+            
+            drawBBSVisuals(W, D, cover, topNum, topDia, botNum, botDia, stDia, a, b);
+        }
+
+        function drawBBSVisuals(W, D, cover, topNum, topDia, botNum, botDia, stDia, a, b) {
+            const csContainer = getEl('bbs-visual-cs');
+            const scale = 200 / Math.max(W, D);
+            const w_s = W * scale, d_s = D * scale;
+            let csSvg = `<svg viewBox="-30 -30 ${w_s+60} ${d_s+60}" class="w-full h-full"><g transform="translate(0, ${d_s}) scale(1, -1)">`;
+            csSvg += `<rect x="0" y="0" width="${w_s}" height="${d_s}" fill="#e5e7eb" stroke="#4b5563" stroke-width="1.5"/>`;
+            csSvg += `<rect x="${cover*scale}" y="${cover*scale}" width="${a*scale}" height="${b*scale}" stroke="#6b7280" stroke-width="${stDia*scale*0.8}" rx="${stDia*scale*0.8}"/>`;
+            const barR = Math.max(topDia, botDia) * scale * 0.4;
+            for(let i=0; i<botNum; i++){ csSvg += `<circle cx="${(w_s/(botNum+1))*(i+1)}" cy="${(cover+botDia/2)*scale}" r="${barR}" fill="#4338ca"/>`; }
+            for(let i=0; i<topNum; i++){ csSvg += `<circle cx="${(w_s/(topNum+1))*(i+1)}" cy="${(d_s - (cover+topDia/2)*scale)}" r="${barR}" fill="#4338ca"/>`; }
+            csSvg += `</g><text x="${w_s/2}" y="${d_s+15}" font-size="10" text-anchor="middle" fill="#1f2937">${W} mm</text>`;
+            csSvg += `<text x="-15" y="${d_s/2}" font-size="10" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 -15,${d_s/2})">${D} mm</text></svg>`;
+            csContainer.innerHTML = csSvg;
+
+            const stContainer = getEl('bbs-visual-stirrup');
+            const stScale = 180 / Math.max(a, b);
+            const a_s = a * stScale, b_s = b * stScale, d = stDia * stScale;
+            let stSvg = `<svg viewBox="-40 -40 ${a_s+80} ${b_s+80}" class="w-full h-full">`;
+            stSvg += `<path d="M ${d*2} ${b_s-d} L 0 ${b_s} L ${a_s} ${b_s} L ${a_s} 0 L ${d} 0 L 0 ${d} L 0 ${b_s-d*2} M ${d} 0 L ${d*2.4} ${d*1.4}" stroke="#6b7280" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
+            stSvg += `<g stroke="#1f2937" stroke-width="1" font-size="10" text-anchor="middle">`;
+            stSvg += `<line x1="0" y1="${b_s+10}" x2="${a_s}" y2="${b_s+10}"/><line x1="0" y1="${b_s+5}" x2="0" y2="${b_s+15}"/><line x1="${a_s}" y1="${b_s+5}" x2="${a_s}" y2="${b_s+15}"/>`;
+            stSvg += `<text x="${a_s/2}" y="${b_s+25}">A = ${a}mm</text>`;
+            stSvg += `<line x1="-10" y1="0" x2="-10" y2="${b_s}"/><line x1="-5" y1="0" x2="-15" y2="0"/><line x1="-5" y1="${b_s}" x2="-15" y2="${b_s}"/>`;
+            stSvg += `<text x="-30" y="${b_s/2}" dominant-baseline="middle">B = ${b}mm</text>`;
+            stSvg += `</g></svg>`;
+            stContainer.innerHTML = stSvg;
+        }
 
     </script>
 </body>
