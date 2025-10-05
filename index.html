@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Civil Structural Design Suite - Professional Engineering Tools</title>
-    <meta name="description" content="Advanced structural design and analysis suite for civil engineers with improved algorithms and visualization">
+    <title>Civil Structural Design Suite - v3.0</title>
+    <meta name="description" content="Advanced structural design and analysis suite with modular architecture, interactive visuals, and enhanced reporting.">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.2.1/dist/chartjs-plugin-annotation.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-gray-50 transition-colors duration-300">
-    <!-- Loading Screen -->
     <div id="loading" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
         <div class="text-center">
             <div class="loading-spinner mx-auto mb-4"></div>
-            <p class="text-gray-600 text-lg font-medium">Initializing Civil Suite...</p>
+            <p class="text-gray-600 text-lg font-medium">Initializing Civil Suite v3.0...</p>
             <div id="loading-details" class="text-gray-500 text-sm mt-2">Loading engineering modules</div>
             <div class="w-64 bg-gray-200 rounded-full h-2 mt-4 mx-auto">
                 <div id="loading-progress" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
@@ -24,7 +25,6 @@
     </div>
 
     <main class="min-h-screen">
-        <!-- Header -->
         <header class="bg-gradient-to-r from-[#5c7f67] to-[#4a6b57] text-white shadow-2xl">
             <div class="container mx-auto px-4 py-6">
                 <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
@@ -33,97 +33,78 @@
                             🏗️ Civil Structural Design Suite
                         </h1>
                         <p class="text-blue-100 mt-2 flex items-center gap-2 text-sm sm:text-base">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
-                            </svg>
-                            Professional Engineering Tools • Enhanced Algorithms v2.0
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+                            Professional Engineering Tools • Refactored Engine v3.0
                         </p>
                     </div>
                     
-                    <div class="flex flex-wrap gap-3">
-                        <!-- Theme Toggle -->
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div class="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-2 rounded-xl">
+                            <label for="unit-system" class="text-sm font-medium">Units:</label>
+                            <select id="unit-system" class="bg-transparent text-white border-none focus:ring-0 text-sm">
+                                <option value="metric" class="text-black">Metric (kN, m)</option>
+                                <option value="imperial" class="text-black">Imperial (kips, ft)</option>
+                            </select>
+                        </div>
+
                         <button id="theme-toggle" class="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
-                            </svg>
-                            <span class="hidden sm:inline">Theme</span>
+                            🌙 Dark
                         </button>
 
-                        <!-- Project Actions -->
                         <div class="flex gap-2">
                             <button id="export-project" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 text-sm font-medium">
                                 💾 Export
                             </button>
                             <input type="file" id="import-project" accept=".civiljson" class="hidden">
-                            <button onclick="document.getElementById('import-project').click()" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 text-sm font-medium">
+                            <button id="import-project-button" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 text-sm font-medium">
                                 📂 Import
                             </button>
                         </div>
                     </div>
                 </div>
-
-                <!-- Progress Bar -->
-                <div id="global-progress" class="mt-4 h-1 bg-white/20 rounded-full overflow-hidden hidden">
-                    <div class="h-full bg-green-400 transition-all duration-500" style="width: 0%"></div>
-                </div>
             </div>
         </header>
 
-        <!-- Navigation -->
         <nav class="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-40 shadow-sm">
             <div class="container mx-auto px-4">
                 <div class="flex flex-wrap gap-2 py-4 overflow-x-auto">
                     <button class="tab-button active" data-tab="beam-analysis">📏 Beam Analysis</button>
                     <button class="tab-button" data-tab="column-design">🏛️ Column Design</button>
                     <button class="tab-button" data-tab="slab-design">🧱 Slab Design</button>
-                    <button class="tab-button" data-tab="footing-design">🏠 Footing Design</button>
-                    <button class="tab-button" data-tab="bbs">📊 Bar Bending Schedule</button>
-                    <button class="tab-button" data-tab="staircase-design">🪜 Staircase Design</button>
-                    <button class="tab-button" data-tab="retaining-wall">🧱 Retaining Wall</button>
-                    <button class="tab-button" data-tab="water-tank">💧 Water Tank</button>
-                    <button class="tab-button" data-tab="steel-design">🔩 Steel Design</button>
-                    <button class="tab-button" data-tab="concrete-mix">🏗️ Concrete Mix</button>
                     <button class="tab-button" data-tab="history">📚 History <span id="history-count" class="history-badge hidden"></span></button>
                 </div>
             </div>
         </nav>
 
-        <!-- Main Content -->
         <div class="container mx-auto px-4 py-8">
-            <!-- Beam Analysis Module -->
             <div id="beam-analysis" class="tab-content module-container">
                 <div class="grid grid-cols-1 xl:grid-cols-4 gap-8">
-                    <!-- Input Panel -->
                     <div class="xl:col-span-1 space-y-6">
                         <div class="result-card p-6">
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                    <span class="text-blue-600 font-bold">1</span>
-                                </div>
-                                <h3 class="text-xl font-bold text-gray-800">Beam Properties</h3>
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">1. Beam Properties</h3>
+                            <div id="beam-visual" class="visual-box mb-6 rounded-xl">
+                                <svg id="beam-svg" width="100%" height="120" viewBox="0 0 300 120"></svg>
                             </div>
-                            <div id="beam-visual" class="visual-box mb-6 rounded-xl"></div>
                             <div class="space-y-4">
                                 <div>
-                                    <label for="beamType" class="block text-sm font-medium text-gray-700 mb-2">Beam Type</label>
+                                    <label for="beamType" class="input-label">Beam Type</label>
                                     <select id="beamType" class="form-input">
                                         <option value="simply-supported">Simply Supported</option>
                                         <option value="cantilever">Cantilever</option>
                                         <option value="fixed">Fixed Both Ends</option>
-                                        <option value="continuous">Continuous (2 Span)</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label for="beamLength" class="block text-sm font-medium text-gray-700 mb-2">Span Length (m)</label>
+                                    <label for="beamLength" class="input-label">Span Length <span class="unit-label">(m)</span></label>
                                     <input type="number" id="beamLength" value="6.0" min="1" max="50" step="0.1" class="form-input">
                                 </div>
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label for="beamWidth" class="block text-sm font-medium text-gray-700 mb-2">Width (mm)</label>
+                                        <label for="beamWidth" class="input-label">Width <span class="unit-label">(mm)</span></label>
                                         <input type="number" id="beamWidth" value="230" min="100" max="1000" class="form-input">
                                     </div>
                                     <div>
-                                        <label for="beamDepth" class="block text-sm font-medium text-gray-700 mb-2">Depth (mm)</label>
+                                        <label for="beamDepth" class="input-label">Depth <span class="unit-label">(mm)</span></label>
                                         <input type="number" id="beamDepth" value="450" min="150" max="2000" class="form-input">
                                     </div>
                                 </div>
@@ -131,524 +112,116 @@
                         </div>
 
                         <div class="result-card p-6">
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                                    <span class="text-green-600 font-bold">2</span>
-                                </div>
-                                <h3 class="text-xl font-bold text-gray-800">Loads & Materials</h3>
-                            </div>
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">2. Loads & Materials</h3>
                             <div class="space-y-4">
                                 <div>
-                                    <label for="beamUDL" class="block text-sm font-medium text-gray-700 mb-2">Uniform Load (kN/m)</label>
-                                    <input type="number" id="beamUDL" value="15.0" min="0.1" step="0.1" class="form-input">
+                                    <label for="beamDL" class="input-label">Dead Load <span class="unit-label">(kN/m)</span></label>
+                                    <input type="number" id="beamDL" value="10.0" min="0" step="0.1" class="form-input">
                                 </div>
                                 <div>
-                                    <label for="beamPointLoad" class="block text-sm font-medium text-gray-700 mb-2">Point Load (kN)</label>
-                                    <input type="number" id="beamPointLoad" value="20" min="0" step="1" class="form-input">
+                                    <label for="beamLL" class="input-label">Live Load <span class="unit-label">(kN/m)</span></label>
+                                    <input type="number" id="beamLL" value="15.0" min="0" step="0.1" class="form-input">
                                 </div>
                                 <div>
-                                    <label for="beamPointLoadPos" class="block text-sm font-medium text-gray-700 mb-2">Point Load Position (m from left)</label>
-                                    <input type="number" id="beamPointLoadPos" value="3.0" min="0" step="0.1" class="form-input">
-                                </div>
-                                <div>
-                                    <label for="beamFck" class="block text-sm font-medium text-gray-700 mb-2">Concrete Grade</label>
+                                    <label for="beamFck" class="input-label">Concrete Grade</label>
                                     <select id="beamFck" class="form-input">
                                         <option value="20">M20</option>
                                         <option value="25" selected>M25</option>
                                         <option value="30">M30</option>
-                                        <option value="35">M35</option>
-                                        <option value="40">M40</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label for="beamFy" class="block text-sm font-medium text-gray-700 mb-2">Steel Grade</label>
+                                    <label for="beamFy" class="input-label">Steel Grade</label>
                                     <select id="beamFy" class="form-input">
                                         <option value="415">Fe415</option>
                                         <option value="500" selected>Fe500</option>
-                                        <option value="550">Fe550</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label for="beamCover" class="block text-sm font-medium text-gray-700 mb-2">Cover (mm)</label>
+                                    <label for="beamCover" class="input-label">Cover <span class="unit-label">(mm)</span></label>
                                     <input type="number" id="beamCover" value="25" min="15" max="75" class="form-input">
                                 </div>
                             </div>
                             <div class="mt-6 space-y-3">
-                                <button id="runBeamButton" class="run-button w-full">🚀 Run Beam Analysis</button>
-                                <button class="print-button w-full no-print">📄 Generate Report</button>
+                                <button id="runBeamButton" class="run-button w-full">🚀 Run Analysis</button>
+                                <button id="printBeamReport" class="print-button w-full no-print">📄 Generate Report</button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Results Panel -->
                     <div class="xl:col-span-3 space-y-6">
-                        <!-- Quick Stats -->
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div class="result-card text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-                                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                                    <span class="text-white font-bold">S</span>
-                                </div>
-                                <p class="font-semibold text-gray-600">Max Shear Force</p>
-                                <p id="beamMaxShear" class="result-value text-2xl">-</p>
+                        <div id="beamStatus" class="status-visual hidden"></div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div class="result-card-small">
+                                <p class="result-label">Max Shear</p>
+                                <p id="beamMaxShear" class="result-value">-</p>
                             </div>
-                            <div class="result-card text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-                                <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                                    <span class="text-white font-bold">M</span>
-                                </div>
-                                <p class="font-semibold text-gray-600">Max Bending Moment</p>
-                                <p id="beamMaxMoment" class="result-value text-2xl">-</p>
+                            <div class="result-card-small">
+                                <p class="result-label">Max Moment</p>
+                                <p id="beamMaxMoment" class="result-value">-</p>
                             </div>
-                            <div class="result-card text-center p-6 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-                                <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                                    <span class="text-white font-bold">Δ</span>
-                                </div>
-                                <p class="font-semibold text-gray-600">Max Deflection</p>
-                                <p id="beamMaxDeflection" class="result-value text-2xl">-</p>
+                            <div class="result-card-small">
+                                <p class="result-label">Max Deflection</p>
+                                <p id="beamMaxDeflection" class="result-value">-</p>
+                            </div>
+                             <div class="result-card-small">
+                                <p class="result-label">Utilization</p>
+                                <p id="beamUtilization" class="result-value">-</p>
                             </div>
                         </div>
 
-                        <!-- Diagrams -->
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div class="result-card">
-                                <h3 class="result-title text-xl mb-4 flex items-center gap-2">
-                                    <span class="w-2 h-6 bg-blue-500 rounded-full"></span>
-                                    Shear Force Diagram (SFD)
-                                </h3>
-                                <div class="chart-container">
-                                    <canvas id="sfd-chart"></canvas>
-                                </div>
-                            </div>
-                            <div class="result-card">
-                                <h3 class="result-title text-xl mb-4 flex items-center gap-2">
-                                    <span class="w-2 h-6 bg-red-500 rounded-full"></span>
-                                    Bending Moment Diagram (BMD)
-                                </h3>
-                                <div class="chart-container">
-                                    <canvas id="bmd-chart"></canvas>
-                                </div>
-                            </div>
+                            <div class="result-card"><h3 class="result-title">Shear Force Diagram (SFD)</h3><div class="chart-container"><canvas id="sfd-chart"></canvas></div></div>
+                            <div class="result-card"><h3 class="result-title">Bending Moment Diagram (BMD)</h3><div class="chart-container"><canvas id="bmd-chart"></canvas></div></div>
                         </div>
 
-                        <!-- Design Results -->
                         <div class="result-card">
-                            <h3 class="result-title text-xl mb-4">Design Results</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <h4 class="font-semibold text-gray-700 mb-3">Reinforcement Details</h4>
-                                    <div class="space-y-2">
-                                        <div class="flex justify-between">
-                                            <span>Bottom Steel Required:</span>
-                                            <span id="beamBottomSteel" class="font-mono text-blue-600">-</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span>Top Steel Required:</span>
-                                            <span id="beamTopSteel" class="font-mono text-blue-600">-</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span>Shear Reinforcement:</span>
-                                            <span id="beamShearSteel" class="font-mono text-green-600">-</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span>Deflection Check:</span>
-                                            <span id="beamDeflectionCheck" class="font-mono text-green-600">-</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <h4 class="font-semibold text-gray-700 mb-3">Capacity Check</h4>
-                                    <div class="space-y-2">
-                                        <div class="flex justify-between">
-                                            <span>Moment Capacity:</span>
-                                            <span id="beamMomentCapacity" class="font-mono text-green-600">-</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span>Shear Capacity:</span>
-                                            <span id="beamShearCapacity" class="font-mono text-green-600">-</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span>Utilization Ratio:</span>
-                                            <span id="beamUtilization" class="font-mono text-green-600">-</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span>Design Status:</span>
-                                            <span id="beamDesignStatus" class="font-mono text-green-600">-</span>
-                                        </div>
-                                    </div>
-                                </div>
+                            <h3 class="result-title">Design Results</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                                <div class="result-item"><span class="font-medium">Bottom Steel:</span><span id="beamBottomSteel" class="result-text">-</span></div>
+                                <div class="result-item"><span class="font-medium">Top Steel:</span><span id="beamTopSteel" class="result-text">-</span></div>
+                                <div class="result-item"><span class="font-medium">Shear Links:</span><span id="beamShearSteel" class="result-text">-</span></div>
+                                <div class="result-item"><span class="font-medium">Deflection Check:</span><span id="beamDeflectionCheck" class="result-text">-</span></div>
+                                <div class="result-item"><span class="font-medium">Moment Capacity:</span><span id="beamMomentCapacity" class="result-text">-</span></div>
+                                <div class="result-item"><span class="font-medium">Shear Capacity:</span><span id="beamShearCapacity" class="result-text">-</span></div>
                             </div>
                         </div>
-
-                        <!-- Status Visual -->
-                        <div id="beamStatus" class="status-visual fail hidden"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Column Design Module -->
             <div id="column-design" class="tab-content hidden module-container">
-                <div class="grid grid-cols-1 xl:grid-cols-4 gap-8">
-                    <div class="xl:col-span-1 space-y-6">
-                        <div class="result-card p-6">
-                            <h3 class="text-xl font-bold text-gray-800 mb-4">Column Properties</h3>
-                            <div id="column-visual" class="visual-box mb-4 rounded-xl"></div>
-                            <div class="space-y-4">
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label for="colWidth" class="block text-sm font-medium text-gray-700">Width (mm)</label>
-                                        <input type="number" id="colWidth" value="300" class="form-input mt-1">
-                                    </div>
-                                    <div>
-                                        <label for="colDepth" class="block text-sm font-medium text-gray-700">Depth (mm)</label>
-                                        <input type="number" id="colDepth" value="450" class="form-input mt-1">
-                                    </div>
-                                </div>
-                                <div>
-                                    <label for="colHeight" class="block text-sm font-medium text-gray-700">Height (m)</label>
-                                    <input type="number" id="colHeight" value="3.0" class="form-input mt-1">
-                                </div>
-                                <div>
-                                    <label for="colPu" class="block text-sm font-medium text-gray-700">Factored Load (kN)</label>
-                                    <input type="number" id="colPu" value="1500" class="form-input mt-1">
-                                </div>
-                                <div>
-                                    <label for="colMux" class="block text-sm font-medium text-gray-700">Moment about X (kNm)</label>
-                                    <input type="number" id="colMux" value="50" class="form-input mt-1">
-                                </div>
-                                <div>
-                                    <label for="colMuy" class="block text-sm font-medium text-gray-700">Moment about Y (kNm)</label>
-                                    <input type="number" id="colMuy" value="30" class="form-input mt-1">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="result-card p-6">
-                            <h3 class="text-xl font-bold text-gray-800">Material Properties</h3>
-                            <div class="mt-4 space-y-4">
-                                <div>
-                                    <label for="colFck" class="block text-sm font-medium text-gray-700">Concrete (fck)</label>
-                                    <select id="colFck" class="form-input mt-1">
-                                        <option value="20">M20</option>
-                                        <option value="25" selected>M25</option>
-                                        <option value="30">M30</option>
-                                        <option value="35">M35</option>
-                                        <option value="40">M40</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="colFy" class="block text-sm font-medium text-gray-700">Steel (fy)</label>
-                                    <select id="colFy" class="form-input mt-1">
-                                        <option value="415">Fe415</option>
-                                        <option value="500" selected>Fe500</option>
-                                        <option value="550">Fe550</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="colCover" class="block text-sm font-medium text-gray-700">Cover (mm)</label>
-                                    <input type="number" id="colCover" value="40" class="form-input mt-1">
-                                </div>
-                                <div>
-                                    <label for="colBarDiameter" class="block text-sm font-medium text-gray-700">Main Bar Diameter (mm)</label>
-                                    <select id="colBarDiameter" class="form-input mt-1">
-                                        <option value="12">12 mm</option>
-                                        <option value="16" selected>16 mm</option>
-                                        <option value="20">20 mm</option>
-                                        <option value="25">25 mm</option>
-                                        <option value="32">32 mm</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <button id="runColumnButton" class="run-button w-full mt-6">🏗️ Design Column</button>
-                            <button class="print-button w-full no-print mt-3">📄 Generate Report</button>
-                        </div>
-                    </div>
-                    <div class="xl:col-span-3 space-y-6">
-                        <div class="result-card" data-title="Design Summary">
-                            <h3 class="result-title text-2xl mb-4">Design Summary</h3>
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                                <div class="text-center p-4 bg-blue-50 rounded-lg">
-                                    <p class="font-semibold text-gray-600">Steel Area</p>
-                                    <p id="colSteelArea" class="result-value text-xl">-</p>
-                                </div>
-                                <div class="text-center p-4 bg-green-50 rounded-lg">
-                                    <p class="font-semibold text-gray-600">Steel %</p>
-                                    <p id="colSteelPercent" class="result-value text-xl">-</p>
-                                </div>
-                                <div class="text-center p-4 bg-purple-50 rounded-lg">
-                                    <p class="font-semibold text-gray-600">Capacity</p>
-                                    <p id="colCapacity" class="result-value text-xl">-</p>
-                                </div>
-                                <div class="text-center p-4 bg-orange-50 rounded-lg">
-                                    <p class="font-semibold text-gray-600">Utilization</p>
-                                    <p id="colUtilization" class="result-value text-xl">-</p>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <h4 class="font-semibold text-gray-700 mb-3">Reinforcement Details</h4>
-                                    <div class="space-y-2">
-                                        <div class="flex justify-between">
-                                            <span>Main Bars:</span>
-                                            <span id="colReinforcement" class="font-mono text-blue-600">-</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span>Lateral Ties:</span>
-                                            <span id="colTies" class="font-mono text-green-600">-</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span>Steel Provided:</span>
-                                            <span id="colSteelProvided" class="font-mono text-purple-600">-</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span>Number of Bars:</span>
-                                            <span id="colNumBars" class="font-mono text-blue-600">-</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <h4 class="font-semibold text-gray-700 mb-3">Design Checks</h4>
-                                    <div class="space-y-2">
-                                        <div class="flex justify-between">
-                                            <span>Slenderness Ratio:</span>
-                                            <span id="colSlenderness" class="font-mono text-green-600">-</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span>Min Reinforcement:</span>
-                                            <span id="colMinSteel" class="font-mono text-green-600">-</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span>Max Reinforcement:</span>
-                                            <span id="colMaxSteel" class="font-mono text-green-600">-</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span>Biaxial Check:</span>
-                                            <span id="colBiaxial" class="font-mono text-green-600">-</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="colStatus" class="status-visual fail hidden"></div>
-                        
-                        <!-- Interaction Diagram -->
-                        <div class="result-card">
-                            <h3 class="result-title text-xl mb-4">Column Interaction Diagram</h3>
-                            <div class="chart-container">
-                                <canvas id="column-chart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <p class="text-center text-gray-500 py-16">Column Design Module is under construction.</p>
             </div>
 
-            <!-- Slab Design Module -->
             <div id="slab-design" class="tab-content hidden module-container">
-                <div class="grid grid-cols-1 xl:grid-cols-4 gap-8">
-                    <div class="xl:col-span-1 space-y-6">
-                        <div class="result-card p-6">
-                            <h3 class="text-xl font-bold text-gray-800 mb-4">Slab Properties</h3>
-                            <div id="slab-visual" class="visual-box mb-4 rounded-xl"></div>
-                            <div class="space-y-4">
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label for="slabLx" class="block text-sm font-medium text-gray-700">Short Span (m)</label>
-                                        <input type="number" id="slabLx" value="4.0" class="form-input mt-1">
-                                    </div>
-                                    <div>
-                                        <label for="slabLy" class="block text-sm font-medium text-gray-700">Long Span (m)</label>
-                                        <input type="number" id="slabLy" value="6.0" class="form-input mt-1">
-                                    </div>
-                                </div>
-                                <div>
-                                    <label for="slabLL" class="block text-sm font-medium text-gray-700">Live Load (kN/m²)</label>
-                                    <input type="number" id="slabLL" value="3.0" class="form-input mt-1">
-                                </div>
-                                <div>
-                                    <label for="slabFinish" class="block text-sm font-medium text-gray-700">Floor Finish (kN/m²)</label>
-                                    <input type="number" id="slabFinish" value="1.0" class="form-input mt-1">
-                                </div>
-                                <div>
-                                    <label for="slabSupport" class="block text-sm font-medium text-gray-700">Support Condition</label>
-                                    <select id="slabSupport" class="form-input mt-1">
-                                        <option value="simply-supported">Simply Supported</option>
-                                        <option value="continuous">Continuous</option>
-                                        <option value="fixed">Fixed</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="result-card p-6">
-                            <h3 class="text-xl font-bold text-gray-800">Material Properties</h3>
-                            <div class="mt-4 space-y-4">
-                                <div>
-                                    <label for="slabFck" class="block text-sm font-medium text-gray-700">Concrete (fck)</label>
-                                    <select id="slabFck" class="form-input mt-1">
-                                        <option value="20">M20</option>
-                                        <option value="25" selected>M25</option>
-                                        <option value="30">M30</option>
-                                        <option value="35">M35</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="slabFy" class="block text-sm font-medium text-gray-700">Steel (fy)</label>
-                                    <select id="slabFy" class="form-input mt-1">
-                                        <option value="415">Fe415</option>
-                                        <option value="500" selected>Fe500</option>
-                                        <option value="550">Fe550</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="slabCover" class="block text-sm font-medium text-gray-700">Cover (mm)</label>
-                                    <input type="number" id="slabCover" value="20" class="form-input mt-1">
-                                </div>
-                                <div>
-                                    <label for="slabBarDiameter" class="block text-sm font-medium text-gray-700">Main Bar Diameter (mm)</label>
-                                    <select id="slabBarDiameter" class="form-input mt-1">
-                                        <option value="8">8 mm</option>
-                                        <option value="10" selected>10 mm</option>
-                                        <option value="12">12 mm</option>
-                                        <option value="16">16 mm</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <button id="runSlabButton" class="run-button w-full mt-6">🧱 Design Slab</button>
-                            <button class="print-button w-full no-print mt-3">📄 Generate Report</button>
-                        </div>
-                    </div>
-                    <div class="xl:col-span-3 space-y-6">
-                        <div class="result-card">
-                            <h3 class="result-title text-2xl mb-4">Slab Design Summary</h3>
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                                <div class="text-center p-4 bg-blue-50 rounded-lg">
-                                    <p class="font-semibold text-gray-600">Slab Type</p>
-                                    <p id="slabType" class="result-value text-xl">-</p>
-                                </div>
-                                <div class="text-center p-4 bg-green-50 rounded-lg">
-                                    <p class="font-semibold text-gray-600">Depth Required</p>
-                                    <p id="slabDepth" class="result-value text-xl">-</p>
-                                </div>
-                                <div class="text-center p-4 bg-purple-50 rounded-lg">
-                                    <p class="font-semibold text-gray-600">Max Moment</p>
-                                    <p id="slabMaxMoment" class="result-value text-xl">-</p>
-                                </div>
-                                <div class="text-center p-4 bg-orange-50 rounded-lg">
-                                    <p class="font-semibold text-gray-600">Steel %</p>
-                                    <p id="slabSteelPercent" class="result-value text-xl">-</p>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <h4 class="font-semibold text-gray-700 mb-3">Reinforcement Details</h4>
-                                    <div class="space-y-2">
-                                        <div class="flex justify-between">
-                                            <span>Short Span Steel:</span>
-                                            <span id="slabShortSteel" class="font-mono text-blue-600">-</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span>Long Span Steel:</span>
-                                            <span id="slabLongSteel" class="font-mono text-blue-600">-</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span>Distribution Steel:</span>
-                                            <span id="slabDistSteel" class="font-mono text-green-600">-</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span>Steel Provided:</span>
-                                            <span id="slabSteelProvided" class="font-mono text-purple-600">-</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <h4 class="font-semibold text-gray-700 mb-3">Design Checks</h4>
-                                    <div class="space-y-2">
-                                        <div class="flex justify-between">
-                                            <span>Deflection:</span>
-                                            <span id="slabDeflection" class="font-mono text-green-600">-</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span>Cracking:</span>
-                                            <span id="slabCracking" class="font-mono text-green-600">-</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span>Shear:</span>
-                                            <span id="slabShear" class="font-mono text-green-600">-</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span>Minimum Steel:</span>
-                                            <span id="slabMinSteel" class="font-mono text-green-600">-</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="slabStatus" class="status-visual fail hidden"></div>
-                        
-                        <!-- Material Quantities -->
-                        <div class="result-card quantity-card">
-                            <h3 class="result-title text-2xl mb-4">Material Quantities</h3>
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div>
-                                    <p class="font-semibold text-gray-600">Concrete Vol.</p>
-                                    <p id="slabConcreteVol" class="result-value text-xl">-</p>
-                                </div>
-                                <div>
-                                    <p class="font-semibold text-gray-600">Cement</p>
-                                    <p id="slabCement" class="result-value text-xl">-</p>
-                                </div>
-                                <div>
-                                    <p class="font-semibold text-gray-600">Sand</p>
-                                    <p id="slabSand" class="result-value text-xl">-</p>
-                                </div>
-                                <div>
-                                    <p class="font-semibold text-gray-600">Aggregate</p>
-                                    <p id="slabAggregate" class="result-value text-xl">-</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <button class="tab-button" data-tab="bbs-design">📋 Bar Bending Schedule</button>
+                 <p class="text-center text-gray-500 py-16">Slab Design Module is under construction.</p>
             </div>
+            <div id="bbs-design" class="tab-content hidden module-container">
+    <!-- Content will be generated by JavaScript -->
+</div>
 
-            <!-- Additional modules would continue here with similar structure -->
-            <!-- Due to space constraints, I'm showing the most critical modules -->
-
-            <!-- History Module -->
             <div id="history" class="tab-content hidden">
                 <div class="result-card">
                     <div class="flex items-center justify-between mb-6">
                         <h3 class="result-title text-2xl">Calculation History</h3>
-                        <div class="flex gap-3">
-                            <button id="clear-history-btn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
-                                🗑️ Clear All
-                            </button>
-                            <button id="export-history-btn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors">
-                                📥 Export History
-                            </button>
-                        </div>
+                        <button id="clear-history-btn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            🗑️ Clear All
+                        </button>
                     </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <div class="bg-blue-50 p-4 rounded-lg text-center">
-                            <div class="text-2xl font-bold text-blue-600" id="history-total">0</div>
-                            <div class="text-sm text-blue-800">Total Calculations</div>
-                        </div>
-                        <div class="bg-green-50 p-4 rounded-lg text-center">
-                            <div class="text-2xl font-bold text-green-600" id="history-today">0</div>
-                            <div class="text-sm text-green-800">Today</div>
-                        </div>
-                        <div class="bg-purple-50 p-4 rounded-lg text-center">
-                            <div class="text-2xl font-bold text-purple-600" id="history-size">0 KB</div>
-                            <div class="text-sm text-purple-800">Storage Used</div>
-                        </div>
-                    </div>
-
                     <div id="history-list" class="space-y-3 max-h-96 overflow-y-auto"></div>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Toast Notifications Container -->
-    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2 max-w-sm"></div>
+    <div id="toast-container"></div>
 
-    <script src="script.js"></script>
+  <!-- Fix the script order - calculationEngine must load first -->
+<script src="calculationEngine.js"></script>
+<script src="chartManager.js"></script>
+<script src="uiManager.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
